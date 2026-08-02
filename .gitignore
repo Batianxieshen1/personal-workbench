@@ -1,0 +1,16 @@
+# ── 数据与敏感信息 ─────────────────
+workbench/data/
+.env
+.douyin_cookie
+douyin_output/
+chi_sim.traineddata
+
+# ── 私人知识库 / Obsidian 程序 ─────
+Obsidian/
+我的知识库/
+note/
+
+# ── 临时与缓存 ────────────────────
+__pycache__/
+*.pyc
+.superpowers/
