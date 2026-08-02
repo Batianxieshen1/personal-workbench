@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>个人工作台</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div class="layout">
+  <!-- 左侧导航 -->
+  <nav class="sidebar" id="sidebar">
+    <div class="brand">
+      <span class="brand-emoji">🏠</span>
+      <span class="brand-name">个人工作台</span>
+    </div>
+    <a class="nav-item active" data-page="home" href="#/home">🏠 首页</a>
+    <a class="nav-item" data-page="study" href="#/study">📚 学习</a>
+    <a class="nav-item" data-page="ielts" href="#/ielts">🎯 雅思</a>
+    <a class="nav-item" data-page="ideas" href="#/ideas">💡 灵感</a>
+    <a class="nav-item" data-page="review" href="#/review">📝 复盘</a>
+    <a class="nav-item" data-page="tools" href="#/tools">🛠 工具</a>
+    <div class="sidebar-footer" id="sidebar-nickname">同学</div>
+  </nav>
+
+  <!-- 主内容区 -->
+  <main class="main">
+
+    <!-- ══ 首页 ══ -->
+    <section class="page active" id="page-home">
+      <header class="page-head">
+        <h1 id="greeting">你好，同学 👋</h1>
+        <p class="page-sub" id="today-line"></p>
+      </header>
+
+      <div class="grid">
+        <!-- 时钟 + 天气 -->
+        <div class="card card-clock">
+          <div class="clock-time" id="clock-time">--:--</div>
+          <div class="clock-date" id="clock-date"></div>
+          <div class="weather-line" id="weather-line">天气加载中…</div>
+        </div>
+
+        <!-- 今日计划 -->
+        <div class="card card-plan">
+          <div class="card-title">📋 今日计划 <span class="plan-count" id="plan-count"></span></div>
+          <form class="plan-form" id="plan-form">
+            <input class="plan-input" id="plan-input" type="text" placeholder="添加一项计划，回车确认" autocomplete="off">
+          </form>
+          <ul class="plan-list" id="plan-list"></ul>
+        </div>
+
+        <!-- 学习进度（M2 接入） -->
+        <div class="card">
+          <div class="card-title">📚 学习进度</div>
+          <div class="placeholder">大模型课程进度将在 M2 接入</div>
+        </div>
+
+        <!-- 雅思速览（M2 接入） -->
+        <div class="card">
+          <div class="card-title">🎯 雅思速览</div>
+          <div class="placeholder">雅思进度将在 M2 接入</div>
+        </div>
+
+        <!-- 今日灵感（M3 接入） -->
+        <div class="card">
+          <div class="card-title">💡 今日灵感</div>
+          <div class="placeholder">AI 选题灵感将在 M3 接入</div>
+        </div>
+
+        <!-- 复盘入口（M3 接入） -->
+        <div class="card">
+          <div class="card-title">📝 内容复盘</div>
+          <div class="placeholder">每日总结与周报将在 M3 接入</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ 其他页（占位） ══ -->
+    <section class="page" id="page-study">
+      <div class="page-head"><h1>📚 学习</h1></div>
+      <div class="placeholder big">学习进度详情 · M2 建设中</div>
+    </section>
+    <section class="page" id="page-ielts">
+      <div class="page-head"><h1>🎯 雅思</h1></div>
+      <div class="placeholder big">进度看板 · 生词本 · M2 建设中</div>
+    </section>
+    <section class="page" id="page-ideas">
+      <div class="page-head"><h1>💡 灵感</h1></div>
+      <div class="placeholder big">AI 选题灵感 · M3 建设中</div>
+    </section>
+    <section class="page" id="page-review">
+      <div class="page-head"><h1>📝 复盘</h1></div>
+      <div class="placeholder big">每日总结 · 周报 · M3 建设中</div>
+    </section>
+    <section class="page" id="page-tools">
+      <div class="page-head"><h1>🛠 工具</h1></div>
+      <div class="placeholder big">抖音提取 · Obsidian 联动 · M4 建设中</div>
+    </section>
+
+  </main>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>
