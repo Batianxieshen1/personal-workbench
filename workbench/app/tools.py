@@ -75,27 +75,37 @@ def _run(job_id: str, video_id: str, ocr: bool) -> None:
     with _jobs_lock:
         _jobs[job_id]["status"] = "running"
     cmd = [sys.executable, SCRIPT, video_id] + (["--ocr"] if ocr else [])
-    try:
-        r = subprocess.run(
-            cmd,
-            cwd=PROJECT_ROOT,
-            capture_output=True,
-            text=True,
-            timeout=TIMEOUT_SEC,
-            encoding="utf-8",
-        )
-        if r.returncode != 0:
+    # 失败自动重试一次：whisper 模型首次加载/网络波动等偶发失败很常见
+    for attempt in (1, 2):
+        try:
+            r = subprocess.run(
+                cmd,
+                cwd=PROJECT_ROOT,
+                capture_output=True,
+                text=True,
+                timeout=TIMEOUT_SEC,
+                encoding="utf-8",
+            )
+            if r.returncode != 0:
+                last_err = (r.stderr or r.stdout)[-500:]
+                if attempt == 2:
+                    with _jobs_lock:
+                        _jobs[job_id] = {"status": "error", "error": last_err}
+                    return
+                continue
             with _jobs_lock:
-                _jobs[job_id] = {"status": "error", "error": (r.stderr or r.stdout)[-500:]}
+                _jobs[job_id] = {"status": "done", "result": _parse_output(r.stdout)}
             return
-        with _jobs_lock:
-            _jobs[job_id] = {"status": "done", "result": _parse_output(r.stdout)}
-    except subprocess.TimeoutExpired:
-        with _jobs_lock:
-            _jobs[job_id] = {"status": "error", "error": f"任务超时（>{TIMEOUT_SEC} 秒）"}
-    except Exception as e:
-        with _jobs_lock:
-            _jobs[job_id] = {"status": "error", "error": str(e)}
+        except subprocess.TimeoutExpired:
+            if attempt == 2:
+                with _jobs_lock:
+                    _jobs[job_id] = {"status": "error", "error": f"任务超时（>{TIMEOUT_SEC} 秒）"}
+                return
+        except Exception as e:
+            if attempt == 2:
+                with _jobs_lock:
+                    _jobs[job_id] = {"status": "error", "error": str(e)}
+                return
 
 
 def get_job(job_id: str) -> dict | None:

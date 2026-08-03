@@ -86,3 +86,31 @@ def test_get_job_missing_returns_none(tmp_path):
     monkeypatch = pytest.MonkeyPatch()
     monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
     assert tools.get_job("不存在") is None
+
+
+def test_retry_once_on_failure(monkeypatch, tmp_path):
+    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
+
+    calls = {"n": 0}
+
+    def flaky_run(cmd, cwd, capture_output, text, timeout, encoding):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            class Bad:
+                returncode = 1
+                stdout = ""
+                stderr = "偶发错误"
+            return Bad()
+        class Good:
+            returncode = 0
+            stdout = "--- JSON_OUTPUT ---\n{\"metadata\": {}, \"ocr_count\": 0, \"transcript_length\": 7}"
+        return Good()
+
+    monkeypatch.setattr(tools.subprocess, "run", flaky_run)
+    job_id = tools.start_job("7398765432109876543")
+    for _ in range(50):
+        if tools.get_job(job_id)["status"] in ("done", "error"):
+            break
+        time.sleep(0.05)
+    assert calls["n"] == 2  # 失败后自动重试
+    assert tools.get_job(job_id)["status"] == "done"
