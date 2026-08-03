@@ -124,6 +124,27 @@
         <div class="card" id="ielts-board">
           <div class="card-title">🎯 进度看板</div>
           <div id="ielts-board-body">加载中…</div>
+          <details class="board-edit">
+            <summary>✏️ 编辑看板</summary>
+            <div class="set-label" style="margin:8px 0 4px">目标分 / 当前水平 / 备考阶段</div>
+            <div class="set-row" style="margin-bottom:6px">
+              <input class="plan-input" id="ielts-target" type="number" step="0.5" min="0" max="9" placeholder="目标分">
+              <input class="plan-input" id="ielts-band" type="text" placeholder="当前水平">
+            </div>
+            <input class="plan-input" id="ielts-stage" type="text" placeholder="备考阶段，如：基础强化" style="margin-bottom:6px">
+            <div class="set-label" style="margin:8px 0 4px">四科分数（如 6.0）</div>
+            <div class="set-row" style="margin-bottom:6px">
+              <input class="plan-input" id="ielts-听力" type="number" step="0.5" min="0" max="9" placeholder="听力">
+              <input class="plan-input" id="ielts-阅读" type="number" step="0.5" min="0" max="9" placeholder="阅读">
+            </div>
+            <div class="set-row" style="margin-bottom:6px">
+              <input class="plan-input" id="ielts-写作" type="number" step="0.5" min="0" max="9" placeholder="写作">
+              <input class="plan-input" id="ielts-口语" type="number" step="0.5" min="0" max="9" placeholder="口语">
+            </div>
+            <input class="plan-input" id="ielts-exam-date" type="date" style="margin-bottom:6px">
+            <button class="btn-small" id="ielts-save-btn" style="width:100%">💾 保存看板</button>
+            <div id="ielts-save-status" class="muted-line" style="margin-top:6px"></div>
+          </details>
         </div>
         <div class="card">
           <div class="card-title">⏰ 今日复习队列 <span class="plan-count" id="vocab-due-count"></span></div>
@@ -137,12 +158,18 @@
           <div id="ielts-template-status" class="muted-line" style="margin-top:8px"></div>
         </div>
         <div class="card card-wide">
-          <div class="card-title">📖 生词本</div>
+          <div class="card-title">📖 生词本 <span class="plan-count" id="vocab-stats"></span></div>
           <form class="plan-form" id="vocab-form">
             <input class="plan-input" id="vocab-word" type="text" placeholder="单词" autocomplete="off">
             <input class="plan-input" id="vocab-meaning" type="text" placeholder="释义，如：v. 放弃" autocomplete="off">
             <button class="btn-small" type="submit">添加</button>
           </form>
+          <input class="plan-input" id="vocab-search" type="text" placeholder="🔍 搜索单词或释义…" style="margin-bottom:8px">
+          <div style="display:flex;gap:6px;margin-bottom:8px">
+            <button class="btn-small ghost vocab-filter active" data-filter="all">全部</button>
+            <button class="btn-small ghost vocab-filter" data-filter="active">复习中</button>
+            <button class="btn-small ghost vocab-filter" data-filter="done">已毕业</button>
+          </div>
           <ul class="vocab-list" id="vocab-list"></ul>
         </div>
       </div>

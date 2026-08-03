@@ -399,6 +399,14 @@ async function loadIeltsBoard() {
   const el = document.getElementById("ielts-board-body");
   try {
     const i = await api("/api/ielts");
+    // 编辑表单回填
+    document.getElementById("ielts-target").value = i.target_score;
+    document.getElementById("ielts-band").value = i.current_band;
+    document.getElementById("ielts-stage").value = i.stage;
+    document.getElementById("ielts-exam-date").value = i.exam_date || "";
+    for (const [name, band] of Object.entries(i.skills)) {
+      document.getElementById(`ielts-${name}`).value = band || "";
+    }
     const skillBars = Object.entries(i.skills)
       .map(([name, band]) => {
         const pct = band ? Math.min(100, Math.round((parseFloat(band) / 9) * 100)) : 0;
@@ -422,17 +430,79 @@ async function loadIeltsBoard() {
   }
 }
 
+// 看板保存
+document.getElementById("ielts-save-btn").addEventListener("click", async () => {
+  const statusEl = document.getElementById("ielts-save-status");
+  const val = (id) => {
+    const v = document.getElementById(id).value.trim();
+    return v === "" ? null : v;
+  };
+  const skills = {};
+  for (const name of ["听力", "阅读", "写作", "口语"]) {
+    const v = val(`ielts-${name}`);
+    if (v !== null) skills[name] = v;
+  }
+  try {
+    const body = {
+      target_score: val("ielts-target") === null ? null : parseFloat(val("ielts-target")),
+      current_band: val("ielts-band"),
+      stage: val("ielts-stage"),
+      exam_date: val("ielts-exam-date"),
+      skills,
+    };
+    await api("/api/ielts", { method: "PATCH", body: JSON.stringify(body) });
+    statusEl.textContent = "✅ 已保存";
+    loadIeltsBoard();
+    loadHomeCards();
+  } catch {
+    statusEl.textContent = "❌ 保存失败";
+  }
+});
+
+// 生词状态：搜索词 + 筛选
+let vocabSearch = "";
+let vocabFilter = "all";
+
 async function loadVocab() {
   const listEl = document.getElementById("vocab-list");
   try {
     const words = await api("/api/vocab");
-    listEl.innerHTML = words.length
-      ? words.map((w) => vocabItemHtml(w)).join("")
-      : '<li class="vocab-empty">生词本是空的，添加第一个单词吧 📖</li>';
+    // 统计
+    const total = words.length;
+    const graduated = words.filter((w) => w.stage >= 5).length;
+    document.getElementById("vocab-stats").textContent =
+      `共 ${total} · 复习中 ${total - graduated} · 已毕业 ${graduated}`;
+    // 搜索 + 筛选
+    const q = vocabSearch.toLowerCase();
+    const filtered = words.filter((w) => {
+      if (vocabFilter === "active" && w.stage >= 5) return false;
+      if (vocabFilter === "done" && w.stage < 5) return false;
+      if (q && !(w.word.toLowerCase().includes(q) || w.meaning.toLowerCase().includes(q))) return false;
+      return true;
+    });
+    listEl.innerHTML = filtered.length
+      ? filtered.map((w) => vocabItemHtml(w)).join("")
+      : '<li class="vocab-empty">没有匹配的生词</li>';
   } catch {
     listEl.innerHTML = '<li class="vocab-empty">加载失败</li>';
   }
 }
+
+// 搜索输入
+document.getElementById("vocab-search").addEventListener("input", (e) => {
+  vocabSearch = e.target.value;
+  loadVocab();
+});
+
+// 筛选按钮
+document.querySelectorAll(".vocab-filter").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".vocab-filter").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    vocabFilter = btn.dataset.filter;
+    loadVocab();
+  });
+});
 
 async function loadVocabDue() {
   const listEl = document.getElementById("vocab-due-list");
