@@ -41,11 +41,12 @@ def test_generate_ai_failure_degrades(monkeypatch, tmp_path):
 
 def test_manual_add_and_status(monkeypatch, tmp_path):
     monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
-    ideas.add_manual("随手记的点子")
+    ideas.add_manual("随手记的点子", "2026-08-03")  # 显式日期，避免依赖真实时钟跨天
     items = ideas.get_today("2026-08-03")
     assert len(items) == 1
     assert items[0]["source"] == "manual"
     assert items[0]["status"] == "kept"
+    assert items[0]["note"] == ""
     ideas.set_status(items[0]["id"], "discarded")
     assert ideas.get_today("2026-08-03")[0]["status"] == "discarded"
 
