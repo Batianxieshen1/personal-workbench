@@ -14,9 +14,11 @@ from . import config as config_mod
 from . import deepseek
 from . import ideas as ideas_mod
 from . import ielts as ielts_mod
+from . import obsidian as obsidian_mod
 from . import plan as plan_mod
 from . import progress as progress_mod
 from . import reviews as reviews_mod
+from . import tools as tools_mod
 from . import vocab as vocab_mod
 from . import weather as weather_mod
 
@@ -80,6 +82,17 @@ class WeekIn(BaseModel):
     summary: str = ""
 
 
+class DouyinIn(BaseModel):
+    text: str
+    ocr: bool = False
+
+
+class CoordsIn(BaseModel):
+    city: str
+    lat: float
+    lon: float
+
+
 # ── 今日计划 ───────────────────────────────────────────────
 @app.get("/api/plan")
 def api_get_plan(date: str | None = None):
@@ -138,6 +151,11 @@ def api_set_city(body: CityIn):
 @app.patch("/api/config/nickname")
 def api_set_nickname(body: NicknameIn):
     return config_mod.set_nickname(body.nickname)
+
+
+@app.patch("/api/config/coords")
+def api_set_coords(body: CoordsIn):
+    return config_mod.set_coords(body.city, body.lat, body.lon)
 
 
 # ── 学习进度 ──────────────────────────────────────────────
@@ -263,6 +281,40 @@ def api_weekly_ai_draft(body: WeekIn):
 @app.post("/api/weekly")
 def api_save_weekly(body: WeekIn):
     return reviews_mod.save_weekly(body.week, body.summary)
+
+
+# ── 快捷工具 ──────────────────────────────────────────────
+@app.post("/api/tools/douyin")
+def api_douyin_start(body: DouyinIn):
+    try:
+        return {"job_id": tools_mod.start_job(body.text, ocr=body.ocr)}
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.get("/api/tools/douyin/{job_id}")
+def api_douyin_status(job_id: str):
+    job = tools_mod.get_job(job_id)
+    if not job:
+        raise HTTPException(404, f"任务不存在：{job_id}")
+    return job
+
+
+# ── Obsidian 联动 ──────────────────────────────────────────
+@app.get("/api/obsidian/daily")
+def api_obsidian_daily(date: str | None = None):
+    d = date or dt.date.today().isoformat()
+    return {"uri": obsidian_mod.daily_uri(d)}
+
+
+@app.get("/api/obsidian/vault")
+def api_obsidian_vault():
+    return {"uri": obsidian_mod.vault_uri()}
+
+
+@app.get("/api/obsidian/study-note")
+def api_obsidian_study_note():
+    return {"uri": obsidian_mod.study_note_uri()}
 
 
 # ── 首页聚合 ───────────────────────────────────────────────

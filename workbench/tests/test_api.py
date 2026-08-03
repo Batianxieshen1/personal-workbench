@@ -215,3 +215,39 @@ def test_weekly_draft(monkeypatch, tmp_path):
                         lambda prompt, system="", timeout=60.0: "周报草稿")
     r = _client().post("/api/weekly/ai-draft", json={"week": "2026-W32"})
     assert r.json()["draft"] == "周报草稿"
+
+
+# ── M4：工具 / Obsidian / 坐标 ─────────────────────────────
+
+def test_tools_douyin_job_flow(monkeypatch, tmp_path):
+    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
+    # 直接塞一个已完成 job 到 tools 内存，验证查询路由
+    monkeypatch.setattr(main.tools_mod, "_jobs", {"job123": {"status": "done", "result": {"ocr_count": 1}}})
+    r = _client().get("/api/tools/douyin/job123")
+    assert r.status_code == 200
+    assert r.json()["result"]["ocr_count"] == 1
+    assert _client().get("/api/tools/douyin/nope").status_code == 404
+
+
+def test_tools_douyin_bad_input_400(monkeypatch, tmp_path):
+    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
+    monkeypatch.setattr(main.tools_mod, "start_job", lambda text, ocr=False: (_ for _ in ()).throw(ValueError("无法解析")))
+    r = _client().post("/api/tools/douyin", json={"text": "没有数字"})
+    assert r.status_code == 400
+
+
+def test_obsidian_uris(monkeypatch, tmp_path):
+    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
+    r = _client().get("/api/obsidian/daily")
+    assert r.status_code == 200
+    assert r.json()["uri"].startswith("obsidian://open")
+    r = _client().get("/api/obsidian/vault")
+    assert r.json()["uri"].startswith("obsidian://open")
+
+
+def test_config_coords(monkeypatch, tmp_path):
+    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
+    r = _client().patch("/api/config/coords", json={"city": "梅州五华", "lat": 23.92961, "lon": 115.76499})
+    assert r.status_code == 200
+    assert r.json()["city"] == "梅州五华"
+    assert r.json()["lat"] == 23.92961
