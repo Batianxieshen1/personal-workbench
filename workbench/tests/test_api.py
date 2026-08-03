@@ -90,3 +90,69 @@ def test_overview_aggregates(monkeypatch, tmp_path):
     assert body["weather"]["desc"] == "晴"
     assert body["plan"]["items"][0]["text"] == "写代码"
     assert body["nickname"] == "同学"
+
+
+# ── M2：学习进度 / 雅思 / 生词本 ─────────────────────────────
+
+def test_progress_returns_structure(monkeypatch, tmp_path):
+    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
+    monkeypatch.setattr(main.progress_mod, "load_progress",
+                        lambda: {"subject": "认识大模型", "stages": [], "chapters": [],
+                                 "done_count": 0, "total_count": 0, "missing": False})
+    r = _client().get("/api/progress")
+    assert r.status_code == 200
+    assert r.json()["subject"] == "认识大模型"
+
+
+def test_ielts_get_and_patch(monkeypatch, tmp_path):
+    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
+    c = _client()
+    r = c.get("/api/ielts")
+    assert r.json()["target_score"] == 6.5
+    r = c.patch("/api/ielts", json={"target_score": 7.0, "skills": {"听力": "6.0"}})
+    assert r.json()["target_score"] == 7.0
+    assert r.json()["skills"]["听力"] == "6.0"
+    assert r.json()["skills"]["阅读"] == ""
+
+
+def test_vocab_full_flow(monkeypatch, tmp_path):
+    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
+    c = _client()
+    r = c.post("/api/vocab", json={"word": "abandon", "meaning": "v. 放弃"})
+    assert r.status_code == 200
+    wid = r.json()["id"]
+    assert c.get("/api/vocab").json()[0]["word"] == "abandon"
+
+    r = c.post(f"/api/vocab/{wid}/review")
+    assert r.json()["stage"] == 1
+
+    r = c.delete(f"/api/vocab/{wid}")
+    assert r.status_code == 200
+    assert c.get("/api/vocab").json() == []
+
+
+def test_vocab_due_queue(monkeypatch, tmp_path):
+    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
+    c = _client()
+    c.post("/api/vocab", json={"word": "due", "meaning": "到期"})
+    due = c.get("/api/vocab/due").json()
+    assert isinstance(due, list)
+
+
+def test_vocab_missing_404(monkeypatch, tmp_path):
+    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
+    r = _client().post("/api/vocab/no-such-id/review")
+    assert r.status_code == 404
+
+
+def test_overview_includes_m2(monkeypatch, tmp_path):
+    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
+    monkeypatch.setattr(main.weather_mod, "fetch_weather",
+                        lambda lat, lon, timeout=5.0: {"temp": 25, "humidity": 60, "desc": "晴", "icon": "☀️"})
+    monkeypatch.setattr(main.progress_mod, "load_progress",
+                        lambda: {"subject": "认识大模型", "stages": [], "chapters": [],
+                                 "done_count": 0, "total_count": 0, "missing": False})
+    body = _client().get("/api/overview").json()
+    assert body["progress"]["subject"] == "认识大模型"
+    assert body["ielts"]["target_score"] == 6.5
+    assert isinstance(body["review_due"], int)

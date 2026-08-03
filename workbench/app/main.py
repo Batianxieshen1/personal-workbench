@@ -11,7 +11,10 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import config as config_mod
+from . import ielts as ielts_mod
 from . import plan as plan_mod
+from . import progress as progress_mod
+from . import vocab as vocab_mod
 from . import weather as weather_mod
 
 app = FastAPI(title="个人工作台", version="0.1.0")
@@ -37,6 +40,23 @@ class CityIn(BaseModel):
 
 class NicknameIn(BaseModel):
     nickname: str
+
+
+class IeltsPatch(BaseModel):
+    target_score: float | None = None
+    current_band: str | None = None
+    stage: str | None = None
+    exam_date: str | None = None
+    skills: dict | None = None
+
+
+class VocabIn(BaseModel):
+    word: str
+    meaning: str
+
+
+class VocabPatch(BaseModel):
+    meaning: str
 
 
 # ── 今日计划 ───────────────────────────────────────────────
@@ -99,6 +119,66 @@ def api_set_nickname(body: NicknameIn):
     return config_mod.set_nickname(body.nickname)
 
 
+# ── 学习进度 ──────────────────────────────────────────────
+@app.get("/api/progress")
+def api_progress():
+    return progress_mod.load_progress()
+
+
+# ── 雅思 ───────────────────────────────────────────────────
+@app.get("/api/ielts")
+def api_get_ielts():
+    return ielts_mod.get_ielts()
+
+
+@app.patch("/api/ielts")
+def api_patch_ielts(body: IeltsPatch):
+    return ielts_mod.update_ielts(body.model_dump(exclude_none=True))
+
+
+# ── 生词本 ─────────────────────────────────────────────────
+# 注意：/api/vocab/due 必须注册在 /api/vocab/{word_id} 之前，
+# 否则 FastAPI 会把 "due" 当成 word_id 匹配
+@app.get("/api/vocab")
+def api_list_vocab():
+    return vocab_mod.list_words()
+
+
+@app.get("/api/vocab/due")
+def api_due_vocab():
+    return vocab_mod.due_words()
+
+
+@app.post("/api/vocab")
+def api_add_vocab(body: VocabIn):
+    return vocab_mod.add_word(body.word, body.meaning)
+
+
+@app.patch("/api/vocab/{word_id}")
+def api_update_vocab(word_id: str, body: VocabPatch):
+    try:
+        return vocab_mod.update_meaning(word_id, body.meaning)
+    except KeyError:
+        raise HTTPException(404, f"生词不存在：{word_id}")
+
+
+@app.post("/api/vocab/{word_id}/review")
+def api_review_vocab(word_id: str):
+    try:
+        return vocab_mod.review(word_id)
+    except KeyError:
+        raise HTTPException(404, f"生词不存在：{word_id}")
+
+
+@app.delete("/api/vocab/{word_id}")
+def api_delete_vocab(word_id: str):
+    try:
+        vocab_mod.delete_word(word_id)
+        return {"ok": True}
+    except KeyError:
+        raise HTTPException(404, f"生词不存在：{word_id}")
+
+
 # ── 首页聚合 ───────────────────────────────────────────────
 @app.get("/api/overview")
 def api_overview():
@@ -110,11 +190,10 @@ def api_overview():
         "city": cfg["city"],
         "plan": plan_mod.get_plan(d),
         "weather": api_weather(),
-        # ── M2/M3 填充 ──
-        "progress": None,     # 学习进度（M2）
-        "ielts": None,        # 雅思速览（M2）
-        "ideas_today": [],    # 今日灵感（M3）
-        "review_due": 0,      # 生词到期数（M2）
+        "progress": progress_mod.load_progress(),
+        "ielts": ielts_mod.get_ielts(),
+        "ideas_today": [],               # 今日灵感（M3）
+        "review_due": len(vocab_mod.due_words()),
     }
 
 
