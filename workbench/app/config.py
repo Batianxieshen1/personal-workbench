@@ -40,3 +40,11 @@ def set_city(city: str) -> dict:
     cfg.update(city=geo["city"], lat=geo["lat"], lon=geo["lon"])
     storage.save(_CONFIG_FILE, cfg)
     return cfg
+
+
+def set_coords(city: str, lat: float, lon: float) -> dict:
+    """手动指定坐标兜底：Open-Meteo 地理编码查不到县级小地名时用。"""
+    cfg = get_config()
+    cfg.update(city=city.strip(), lat=lat, lon=lon)
+    storage.save(_CONFIG_FILE, cfg)
+    return cfg
