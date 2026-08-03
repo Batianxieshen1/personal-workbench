@@ -63,16 +63,16 @@
           <div id="home-ielts-body" class="card-body">加载中…</div>
         </div>
 
-        <!-- 今日灵感（M3 接入） -->
-        <div class="card">
-          <div class="card-title">💡 今日灵感</div>
-          <div class="placeholder">AI 选题灵感将在 M3 接入</div>
+        <!-- 今日灵感 -->
+        <div class="card" id="home-ideas">
+          <div class="card-title">💡 今日灵感 <span class="plan-count" id="home-ideas-count"></span></div>
+          <div id="home-ideas-body" class="card-body">加载中…</div>
         </div>
 
-        <!-- 复盘入口（M3 接入） -->
-        <div class="card">
+        <!-- 内容复盘 -->
+        <div class="card" id="home-review">
           <div class="card-title">📝 内容复盘</div>
-          <div class="placeholder">每日总结与周报将在 M3 接入</div>
+          <div id="home-review-body" class="card-body">加载中…</div>
         </div>
       </div>
     </section>
@@ -121,11 +121,50 @@
     </section>
     <section class="page" id="page-ideas">
       <div class="page-head"><h1>💡 灵感</h1></div>
-      <div class="placeholder big">AI 选题灵感 · M3 建设中</div>
+      <div class="grid">
+        <div class="card card-wide">
+          <div class="card-title">🤖 今日批次 <span class="plan-count" id="ideas-today-count"></span></div>
+          <div class="sub-hint">AI 每天自动生成，可收藏 / 丢弃 / 换一批</div>
+          <div id="ideas-ai-status" class="muted-line" style="margin-bottom:8px"></div>
+          <ul class="vocab-list" id="ideas-today-list"></ul>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn-small" id="ideas-generate-btn">🎲 换一批</button>
+            <button class="btn-small" id="ideas-ai-fallback" style="display:none">重新连接 AI</button>
+          </div>
+        </div>
+        <div class="card card-wide">
+          <div class="card-title">✍️ 手动添加</div>
+          <form class="plan-form" id="ideas-form">
+            <input class="plan-input" id="ideas-text" type="text" placeholder="随手记下一个点子…" autocomplete="off">
+            <button class="btn-small" type="submit">添加</button>
+          </form>
+          <div class="sub-hint">历史灵感（最新在前）</div>
+          <ul class="vocab-list" id="ideas-all-list"></ul>
+        </div>
+      </div>
     </section>
     <section class="page" id="page-review">
       <div class="page-head"><h1>📝 复盘</h1></div>
-      <div class="placeholder big">每日总结 · 周报 · M3 建设中</div>
+      <div class="grid">
+        <div class="card card-wide">
+          <div class="card-title">📔 每日总结 <span class="plan-count" id="review-date-label"></span></div>
+          <div class="sub-hint">总结今天的计划完成情况，AI 可以帮你起草</div>
+          <textarea class="review-textarea" id="review-summary" rows="5" placeholder="今天完成了什么？有什么收获？明天做什么？"></textarea>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn-small" id="review-ai-btn">🤖 AI 起草</button>
+            <button class="btn-small" id="review-save-btn">💾 保存</button>
+          </div>
+        </div>
+        <div class="card card-wide">
+          <div class="card-title">📊 周报 <span class="plan-count" id="weekly-label"></span></div>
+          <div class="sub-hint">聚合本周计划与总结，AI 生成周报</div>
+          <textarea class="review-textarea" id="weekly-summary" rows="5" placeholder="本周还没生成周报，点击 AI 生成…"></textarea>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn-small" id="weekly-ai-btn">🤖 AI 生成</button>
+            <button class="btn-small" id="weekly-save-btn">💾 保存</button>
+          </div>
+        </div>
+      </div>
     </section>
     <section class="page" id="page-tools">
       <div class="page-head"><h1>🛠 工具</h1></div>

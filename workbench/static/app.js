@@ -27,6 +27,8 @@ function navigate() {
   if (page === "home") loadHome();
   if (page === "study") loadStudyPage();
   if (page === "ielts") loadIeltsPage();
+  if (page === "ideas") loadIdeasPage();
+  if (page === "review") loadReviewPage();
 }
 
 // ── 首页：各卡片并行加载，互不拖累 ──
@@ -57,9 +59,54 @@ async function loadHomeCards() {
     const ov = await api("/api/overview");
     renderHomeProgress(ov.progress);
     renderHomeIelts(ov.ielts, ov.review_due);
+    renderHomeIdeas(ov.ideas_today);
+    renderHomeReview();
   } catch {
     document.getElementById("home-progress-body").textContent = "加载失败";
     document.getElementById("home-ielts-body").textContent = "加载失败";
+  }
+}
+
+// 首页灵感卡：今天有灵感就展示，没有就懒加载触发 AI 生成
+function renderHomeIdeas(ideas) {
+  const body = document.getElementById("home-ideas-body");
+  document.getElementById("home-ideas-count").textContent = ideas.length ? `(${ideas.length})` : "";
+  if (ideas.length) {
+    body.innerHTML = ideas
+      .slice(0, 3)
+      .map((t) => `<div class="home-idea">💡 ${escapeHtml(t)}</div>`)
+      .join("");
+    return;
+  }
+  body.innerHTML = '<div class="placeholder">今日灵感正在生成…</div>';
+  ensureTodayIdeas();  // 懒加载：为空才触发 AI（幂等，不会重复生成）
+}
+
+// 幂等生成今日灵感；AI 不可用时降级提示
+async function ensureTodayIdeas() {
+  try {
+    const items = await api("/api/ideas/generate", { method: "POST" });
+    const kept = items.filter((i) => i.status === "kept");
+    renderHomeIdeas(kept.map((i) => i.text));
+  } catch (e) {
+    document.getElementById("home-ideas-body").innerHTML =
+      '<div class="placeholder">🤖 AI 未配置或不可用<br>可在「灵感」页手动添加</div>';
+  }
+}
+
+// 首页复盘卡：显示今日总结是否已写
+async function renderHomeReview() {
+  const el = document.getElementById("home-review-body");
+  try {
+    const r = await api("/api/reviews");
+    const today = new Date().toISOString().slice(0, 10);
+    if (r.summary) {
+      el.innerHTML = `<div class="home-idea">📝 今日总结已写（${r.summary.length} 字）</div><div class="muted-line" style="margin-top:6px"><a class="nav-link" href="#/review">去查看 →</a></div>`;
+    } else {
+      el.innerHTML = `<div class="home-idea">今日总结还没写</div><div class="muted-line" style="margin-top:6px"><a class="nav-link" href="#/review">去写 →</a></div>`;
+    }
+  } catch {
+    el.innerHTML = '<div class="placeholder">复盘数据加载失败</div>';
   }
 }
 
@@ -349,6 +396,180 @@ document.getElementById("vocab-list").addEventListener("click", async (e) => {
   } catch { /* 同上 */ }
   loadVocab();
   loadVocabDue();
+});
+
+// ── 灵感页 ──
+async function loadIdeasPage() {
+  try {
+    const all = await api("/api/ideas");
+    const today = new Date().toISOString().slice(0, 10);
+    const todayItems = all.filter((i) => i.date === today);
+    renderIdeasToday(todayItems);
+    renderIdeasAll(all);
+    document.getElementById("ideas-ai-status").textContent =
+      todayItems.length ? `今日已生成 ${todayItems.length} 条` : "今日批次为空，点击「换一批」生成";
+  } catch {
+    document.getElementById("ideas-today-list").innerHTML = '<li class="vocab-empty">加载失败</li>';
+  }
+}
+
+function renderIdeasToday(items) {
+  const listEl = document.getElementById("ideas-today-list");
+  document.getElementById("ideas-today-count").textContent = items.length ? `(${items.length})` : "";
+  listEl.innerHTML = items.length
+    ? items.map((i) => `
+      <li class="vocab-item">
+        <span class="vocab-meaning" style="flex:1">${escapeHtml(i.text)}</span>
+        <span class="vocab-stage">${i.source === "ai" ? "🤖 AI" : "✍️ 手动"}</span>
+        ${i.status === "kept"
+          ? `<button class="btn-small ghost" data-idea-discard="${i.id}">丢弃</button>`
+          : `<button class="btn-small" data-idea-keep="${i.id}">捡回</button>`}
+      </li>`).join("")
+    : '<li class="vocab-empty">今日还没有灵感</li>';
+}
+
+function renderIdeasAll(all) {
+  const listEl = document.getElementById("ideas-all-list");
+  listEl.innerHTML = all.length
+    ? all.slice(0, 20).map((i) => `
+      <li class="vocab-item">
+        <span class="vocab-word" style="min-width:80px">${escapeHtml(i.date)}</span>
+        <span class="vocab-meaning" style="flex:1">${escapeHtml(i.text)}</span>
+        <span class="vocab-stage">${i.status === "kept" ? "已收藏" : "已丢弃"}</span>
+      </li>`).join("")
+    : '<li class="vocab-empty">还没有任何灵感，添加或生成一个吧</li>';
+}
+
+// 换一批：AI 不可用时显示"重新连接"按钮
+document.getElementById("ideas-generate-btn").addEventListener("click", async () => {
+  const btn = document.getElementById("ideas-generate-btn");
+  btn.textContent = "生成中…";
+  btn.disabled = true;
+  try {
+    await api("/api/ideas/generate", { method: "POST" });
+    document.getElementById("ideas-ai-fallback").style.display = "none";
+    loadIdeasPage();
+  } catch {
+    document.getElementById("ideas-ai-status").textContent = "🤖 AI 不可用（未配置 key 或服务异常）";
+    document.getElementById("ideas-ai-fallback").style.display = "inline-block";
+  } finally {
+    btn.textContent = "🎲 换一批";
+    btn.disabled = false;
+  }
+});
+
+document.getElementById("ideas-ai-fallback").addEventListener("click", () => {
+  document.getElementById("ideas-generate-btn").click();
+});
+
+// 手动添加
+document.getElementById("ideas-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const input = document.getElementById("ideas-text");
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = "";
+  try {
+    await api("/api/ideas", { method: "POST", body: JSON.stringify({ text }) });
+  } catch { /* 兜底 */ }
+  loadIdeasPage();
+});
+
+// 收藏/丢弃（事件委托）
+document.getElementById("ideas-today-list").addEventListener("click", async (e) => {
+  const discard = e.target.closest("[data-idea-discard]");
+  const keep = e.target.closest("[data-idea-keep]");
+  if (!discard && !keep) return;
+  const id = (discard || keep).dataset.ideaDiscard || (discard || keep).dataset.ideaKeep;
+  try {
+    await api(`/api/ideas/${id}`, { method: "PATCH", body: JSON.stringify({ status: discard ? "discarded" : "kept" }) });
+  } catch { /* 兜底 */ }
+  loadIdeasPage();
+  loadHomeCards();
+});
+
+// ── 复盘页 ──
+function isoWeek(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+}
+
+async function loadReviewPage() {
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById("review-date-label").textContent = `（${today}）`;
+  const week = isoWeek(new Date());
+  document.getElementById("weekly-label").textContent = `（${week}）`;
+  try {
+    const r = await api(`/api/reviews?date=${today}`);
+    document.getElementById("review-summary").value = r.summary || "";
+  } catch { /* 保持空 */ }
+  try {
+    const w = await api(`/api/weekly?week=${week}`);
+    if (w.summary) document.getElementById("weekly-summary").value = w.summary;
+  } catch { /* 保持空 */ }
+}
+
+document.getElementById("review-ai-btn").addEventListener("click", async () => {
+  const btn = document.getElementById("review-ai-btn");
+  btn.textContent = "起草中…";
+  btn.disabled = true;
+  const today = new Date().toISOString().slice(0, 10);
+  try {
+    const r = await api("/api/reviews/ai-draft", { method: "POST", body: JSON.stringify({ date: today }) });
+    document.getElementById("review-summary").value = r.draft;
+  } catch {
+    document.getElementById("review-date-label").textContent = "（AI 不可用，请手动写）";
+  } finally {
+    btn.textContent = "🤖 AI 起草";
+    btn.disabled = false;
+  }
+});
+
+document.getElementById("review-save-btn").addEventListener("click", async () => {
+  const today = new Date().toISOString().slice(0, 10);
+  try {
+    await api("/api/reviews", {
+      method: "POST",
+      body: JSON.stringify({ date: today, summary: document.getElementById("review-summary").value }),
+    });
+    document.getElementById("review-date-label").textContent = "（已保存 ✅）";
+    loadHomeCards();
+  } catch {
+    document.getElementById("review-date-label").textContent = "（保存失败）";
+  }
+});
+
+document.getElementById("weekly-ai-btn").addEventListener("click", async () => {
+  const btn = document.getElementById("weekly-ai-btn");
+  btn.textContent = "生成中…";
+  btn.disabled = true;
+  const week = isoWeek(new Date());
+  try {
+    const r = await api("/api/weekly/ai-draft", { method: "POST", body: JSON.stringify({ week }) });
+    document.getElementById("weekly-summary").value = r.draft;
+  } catch {
+    document.getElementById("weekly-label").textContent = "（本周暂无记录或 AI 不可用）";
+  } finally {
+    btn.textContent = "🤖 AI 生成";
+    btn.disabled = false;
+  }
+});
+
+document.getElementById("weekly-save-btn").addEventListener("click", async () => {
+  const week = isoWeek(new Date());
+  try {
+    await api("/api/weekly", {
+      method: "POST",
+      body: JSON.stringify({ week, summary: document.getElementById("weekly-summary").value }),
+    });
+    document.getElementById("weekly-label").textContent = "（已保存 ✅）";
+  } catch {
+    document.getElementById("weekly-label").textContent = "（保存失败）";
+  }
 });
 
 // ── 启动 ──

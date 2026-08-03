@@ -217,6 +217,25 @@ body {
   font-size: 13.5px; font-weight: 600; cursor: pointer;
 }
 .btn-small:hover { opacity: 0.88; }
+.btn-small.ghost { background: transparent; color: var(--accent-ink); border-color: var(--accent-soft); }
+
+/* 复盘输入区 */
+.review-textarea {
+  width: 100%; border: 1px solid var(--card-border); border-radius: 9px;
+  background: var(--bg); color: var(--ink); padding: 10px 12px;
+  font-size: 14px; line-height: 1.6; resize: vertical; outline: none;
+  font-family: inherit;
+}
+.review-textarea:focus { border-color: var(--accent); }
+
+/* 首页灵感/复盘条目 */
+.home-idea {
+  font-size: 13.5px; padding: 6px 0;
+  border-bottom: 1px dashed var(--card-border);
+}
+.home-idea:last-child { border-bottom: none; }
+.nav-link { color: var(--accent-ink); text-decoration: none; font-weight: 600; }
+.nav-link:hover { text-decoration: underline; }
 
 /* 响应式：窄屏时侧边栏收窄 */
 @media (max-width: 760px) {
