@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>个人工作台</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+<link rel="manifest" href="/manifest.webmanifest">
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -246,5 +247,11 @@
 </div>
 
 <script src="/app.js"></script>
+<script>
+  // PWA：注册 Service Worker（仅安全上下文生效，失败静默）
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  }
+</script>
 </body>
 </html>
