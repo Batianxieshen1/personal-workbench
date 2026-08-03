@@ -1,5 +1,6 @@
 # ── 数据与敏感信息 ─────────────────
 workbench/data/
+workbench/backups/
 .env
 .douyin_cookie
 douyin_output/
