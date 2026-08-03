@@ -156,3 +156,62 @@ def test_overview_includes_m2(monkeypatch, tmp_path):
     assert body["progress"]["subject"] == "认识大模型"
     assert body["ielts"]["target_score"] == 6.5
     assert isinstance(body["review_due"], int)
+
+
+# ── M3：灵感 / 复盘 ─────────────────────────────────────────
+
+def test_ideas_generate_and_status(monkeypatch, tmp_path):
+    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
+    monkeypatch.setattr(main.ideas_mod.deepseek, "chat",
+                        lambda prompt, system="", timeout=60.0: "- 点子一\n- 点子二\n")
+    c = _client()
+    r = c.post("/api/ideas/generate")
+    assert r.status_code == 200
+    items = r.json()
+    assert len(items) == 2
+
+    iid = items[0]["id"]
+    r = c.patch(f"/api/ideas/{iid}", json={"status": "discarded"})
+    assert r.json()["status"] == "discarded"
+
+    r = c.post("/api/ideas", json={"text": "手动点子"})
+    assert r.json()["source"] == "manual"
+
+    assert len(c.get("/api/ideas").json()) == 3
+
+
+def test_ideas_generate_ai_failure_503(monkeypatch, tmp_path):
+    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
+
+    def boom(prompt, system="", timeout=60.0):
+        raise main.ideas_mod.deepseek.AIError("没配 key", reason="no_key")
+
+    monkeypatch.setattr(main.ideas_mod.deepseek, "chat", boom)
+    r = _client().post("/api/ideas/generate")
+    assert r.status_code == 503
+    assert r.json()["detail"]["reason"] == "no_key"
+
+
+def test_review_save_and_ai_draft(monkeypatch, tmp_path):
+    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
+    monkeypatch.setattr(main.reviews_mod.deepseek, "chat",
+                        lambda prompt, system="", timeout=60.0: "AI 草稿内容")
+    c = _client()
+    r = c.post("/api/reviews", json={"date": "2026-08-03", "summary": "手写总结"})
+    assert r.json()["summary"] == "手写总结"
+    assert c.get("/api/reviews", params={"date": "2026-08-03"}).json()["summary"] == "手写总结"
+
+    r = c.post("/api/reviews/ai-draft", json={"date": "2026-08-03"})
+    assert r.json()["draft"] == "AI 草稿内容"
+
+
+def test_weekly_draft(monkeypatch, tmp_path):
+    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
+    # 本周（2026-W32 = 8/3 起）先造一条计划，否则 AI 之前会因"无记录"拦截
+    storage.save("plans/2026-08-03.json", {"date": "2026-08-03", "items": [
+        {"id": "a", "text": "周计划一", "done": True},
+    ]})
+    monkeypatch.setattr(main.reviews_mod.deepseek, "chat",
+                        lambda prompt, system="", timeout=60.0: "周报草稿")
+    r = _client().post("/api/weekly/ai-draft", json={"week": "2026-W32"})
+    assert r.json()["draft"] == "周报草稿"

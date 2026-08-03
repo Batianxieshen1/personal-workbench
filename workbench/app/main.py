@@ -11,9 +11,12 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import config as config_mod
+from . import deepseek
+from . import ideas as ideas_mod
 from . import ielts as ielts_mod
 from . import plan as plan_mod
 from . import progress as progress_mod
+from . import reviews as reviews_mod
 from . import vocab as vocab_mod
 from . import weather as weather_mod
 
@@ -57,6 +60,24 @@ class VocabIn(BaseModel):
 
 class VocabPatch(BaseModel):
     meaning: str
+
+
+class IdeaIn(BaseModel):
+    text: str
+
+
+class IdeaPatch(BaseModel):
+    status: str
+
+
+class ReviewIn(BaseModel):
+    date: str
+    summary: str = ""
+
+
+class WeekIn(BaseModel):
+    week: str
+    summary: str = ""
 
 
 # ── 今日计划 ───────────────────────────────────────────────
@@ -179,6 +200,71 @@ def api_delete_vocab(word_id: str):
         raise HTTPException(404, f"生词不存在：{word_id}")
 
 
+# ── 灵感 ───────────────────────────────────────────────────
+@app.get("/api/ideas")
+def api_list_ideas():
+    return ideas_mod.list_all()
+
+
+@app.post("/api/ideas/generate")
+def api_generate_ideas():
+    """生成今日批次（幂等）；AI 失败返回 503 + 原因，前端降级提示。"""
+    try:
+        return ideas_mod.generate_today()
+    except deepseek.AIError as e:
+        raise HTTPException(503, {"reason": e.reason, "message": str(e)})
+
+
+@app.post("/api/ideas")
+def api_add_idea(body: IdeaIn):
+    return ideas_mod.add_manual(body.text)
+
+
+@app.patch("/api/ideas/{idea_id}")
+def api_set_idea_status(idea_id: str, body: IdeaPatch):
+    try:
+        return ideas_mod.set_status(idea_id, body.status)
+    except KeyError:
+        raise HTTPException(404, f"灵感不存在：{idea_id}")
+
+
+# ── 复盘 ───────────────────────────────────────────────────
+@app.get("/api/reviews")
+def api_get_review(date: str | None = None):
+    return reviews_mod.get_review(date)
+
+
+@app.post("/api/reviews")
+def api_save_review(body: ReviewIn):
+    return reviews_mod.save_review(body.date, body.summary)
+
+
+@app.post("/api/reviews/ai-draft")
+def api_review_ai_draft(body: ReviewIn):
+    try:
+        return {"draft": reviews_mod.ai_draft(body.date)}
+    except deepseek.AIError as e:
+        raise HTTPException(503, {"reason": e.reason, "message": str(e)})
+
+
+@app.get("/api/weekly")
+def api_get_weekly(week: str):
+    return reviews_mod.get_weekly(week)
+
+
+@app.post("/api/weekly/ai-draft")
+def api_weekly_ai_draft(body: WeekIn):
+    try:
+        return {"draft": reviews_mod.weekly_draft(body.week)}
+    except deepseek.AIError as e:
+        raise HTTPException(503, {"reason": e.reason, "message": str(e)})
+
+
+@app.post("/api/weekly")
+def api_save_weekly(body: WeekIn):
+    return reviews_mod.save_weekly(body.week, body.summary)
+
+
 # ── 首页聚合 ───────────────────────────────────────────────
 @app.get("/api/overview")
 def api_overview():
@@ -192,7 +278,7 @@ def api_overview():
         "weather": api_weather(),
         "progress": progress_mod.load_progress(),
         "ielts": ielts_mod.get_ielts(),
-        "ideas_today": [],               # 今日灵感（M3）
+        "ideas_today": [i["text"] for i in ideas_mod.get_today(d) if i["status"] == "kept"],
         "review_due": len(vocab_mod.due_words()),
     }
 
