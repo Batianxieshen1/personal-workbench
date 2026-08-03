@@ -72,6 +72,7 @@ class IdeaIn(BaseModel):
 class IdeaPatch(BaseModel):
     status: str | None = None
     note: str | None = None
+    outcome: str | None = None
 
 
 class ReviewIn(BaseModel):
@@ -274,6 +275,8 @@ def api_set_idea_status(idea_id: str, body: IdeaPatch):
     try:
         if body.status is not None:
             return ideas_mod.set_status(idea_id, body.status)
+        if body.outcome is not None:
+            return ideas_mod.set_outcome(idea_id, body.outcome)
         return ideas_mod.set_note(idea_id, body.note or "")
     except KeyError:
         raise HTTPException(404, f"灵感不存在：{idea_id}")

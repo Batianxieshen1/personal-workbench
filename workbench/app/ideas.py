@@ -46,6 +46,7 @@ def _make_item(text: str, source: str, date: str) -> dict:
         "date": date,
         "status": "kept",
         "note": "",
+        "outcome": "",
         "created_at": dt.datetime.now().isoformat(),
     }
 
@@ -102,6 +103,17 @@ def set_note(idea_id: str, note: str) -> dict:
     for i in data["ideas"]:
         if i["id"] == idea_id:
             i["note"] = note.strip()
+            _save(data)
+            return i
+    raise KeyError(idea_id)
+
+
+def set_outcome(idea_id: str, outcome: str) -> dict:
+    """记录已采用灵感的产出：链接 + 效果（自由文本）。"""
+    data = _data()
+    for i in data["ideas"]:
+        if i["id"] == idea_id:
+            i["outcome"] = outcome.strip()
             _save(data)
             return i
     raise KeyError(idea_id)

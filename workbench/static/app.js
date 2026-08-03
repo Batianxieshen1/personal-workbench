@@ -120,7 +120,7 @@ async function renderHomeReview() {
     if (r.summary) {
       el.innerHTML = `<div class="home-idea">📝 今日总结已写（${r.summary.length} 字）</div><div class="muted-line" style="margin-top:6px"><a class="nav-link" href="#/review">去查看 →</a></div>`;
     } else {
-      el.innerHTML = `<div class="home-idea">今日总结还没写</div><div class="muted-line" style="margin-top:6px"><a class="nav-link" href="#/review">去写 →</a></div>`;
+      el.innerHTML = `<div class="home-idea" style="color:var(--danger)">⚠️ 今天还没写总结</div><div class="muted-line" style="margin-top:6px"><a class="nav-link" href="#/review">去写 →</a></div>`;
     }
   } catch {
     el.innerHTML = '<div class="placeholder">复盘数据加载失败</div>';
@@ -741,10 +741,26 @@ async function loadContentReview() {
         <div class="board-stat"><div class="num">${stats.done}</div><div class="label">✅ 已采用</div></div>
         <div class="board-stat"><div class="num">${stats.discarded}</div><div class="label">🗑 已丢弃</div></div>
       </div>
-      <div class="muted-line" style="margin:12px 0 6px">已采用的点子：</div>
+      <div class="muted-line" style="margin:12px 0 6px">已采用的点子（点击 ✍️ 记录产出）：</div>
       ${adopted.length ? adopted.slice(0, 10).map((i) =>
-        `<div class="home-idea">✅ ${escapeHtml(i.text)} <span class="muted-line">(${i.date})</span></div>`).join("")
+        `<div class="home-idea">✅ ${escapeHtml(i.text)} <span class="muted-line">(${i.date})</span>
+          ${i.outcome ? `<div class="muted-line">📎 ${escapeHtml(i.outcome)}</div>` : ""}
+          <button class="btn-small ghost" data-outcome="${i.id}" style="margin-top:4px">✍️ 填产出</button>
+        </div>`).join("")
         : '<div class="placeholder">还没有采用任何灵感，去灵感页把点子变成现实 🚀</div>'}`;
+    // 产出按钮事件
+    el.querySelectorAll("[data-outcome]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const item = adopted.find((a) => a.id === btn.dataset.outcome);
+        const current = item?.outcome || "";
+        const outcome = prompt("记录产出（如：链接 | 效果数据）：", current);
+        if (outcome === null) return;
+        try {
+          await api(`/api/ideas/${btn.dataset.outcome}`, { method: "PATCH", body: JSON.stringify({ outcome }) });
+        } catch { /* 兜底 */ }
+        loadContentReview();
+      });
+    });
   } catch {
     el.innerHTML = '<div class="placeholder">内容复盘加载失败</div>';
   }
