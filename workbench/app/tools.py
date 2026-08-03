@@ -112,3 +112,11 @@ def get_job(job_id: str) -> dict | None:
     with _jobs_lock:
         job = _jobs.get(job_id)
         return dict(job) if job else None
+
+
+def list_jobs() -> list:
+    """全部任务（最新在前），供历史列表展示。"""
+    with _jobs_lock:
+        jobs = [dict(j) | {"job_id": jid} for jid, j in _jobs.items()]
+    jobs.sort(key=lambda j: j["job_id"], reverse=True)
+    return jobs

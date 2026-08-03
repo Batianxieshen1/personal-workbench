@@ -833,6 +833,7 @@ document.getElementById("weekly-save-btn").addEventListener("click", async () =>
 // ── 工具页 ──
 async function loadToolsPage() {
   loadLinksManager();
+  loadDouyinHistory();
   try {
     const cfg = await api("/api/config");
     document.getElementById("set-nickname").value = cfg.nickname;
@@ -1027,6 +1028,37 @@ function setupHomeDrag() {
     grid.insertBefore(dragged, after ? target.nextSibling : target);
   });
 }
+
+// 抖音历史任务列表
+async function loadDouyinHistory() {
+  const el = document.getElementById("douyin-history");
+  try {
+    const jobs = await api("/api/tools/douyin/history");
+    el.innerHTML = jobs.length
+      ? jobs.slice(0, 10).map((j) => {
+        const label = j.status === "done"
+          ? `✅ ${j.result?.metadata?.["标题"]?.slice(0, 20) || "完成"}`
+          : j.status === "error" ? `❌ ${j.error?.slice(0, 30) || "失败"}` : "⏳ " + j.status;
+        return `<li class="vocab-item"><span class="vocab-word" style="min-width:70px">${j.job_id}</span><span class="vocab-meaning" style="flex:1">${escapeHtml(label)}</span></li>`;
+      }).join("")
+      : '<li class="vocab-empty">还没有任务记录</li>';
+  } catch {
+    el.innerHTML = '<li class="vocab-empty">加载失败</li>';
+  }
+}
+
+// ── 快捷键：N 快速加计划，G 回首页，S 学习页 ──
+document.addEventListener("keydown", (e) => {
+  if (e.target.matches("input, textarea, select")) return;  // 输入时不触发
+  if (e.key === "n" || e.key === "N") {
+    location.hash = "#/home";
+    setTimeout(() => document.getElementById("plan-input")?.focus(), 100);
+  } else if (e.key === "g" || e.key === "G") {
+    location.hash = "#/home";
+  } else if (e.key === "s" || e.key === "S") {
+    location.hash = "#/study";
+  }
+});
 
 // ── 资源收藏管理（工具页） ──
 async function loadLinksManager() {

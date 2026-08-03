@@ -256,6 +256,10 @@
             <button class="btn-small" type="submit">🚀 提取</button>
           </form>
           <div id="douyin-result" class="card-body"></div>
+          <details class="board-edit" style="margin-top:10px">
+            <summary>🕘 历史任务</summary>
+            <ul class="vocab-list" id="douyin-history" style="margin-top:8px"></ul>
+          </details>
         </div>
 
         <!-- Obsidian 联动 -->
@@ -304,6 +308,16 @@
             <button class="btn-small" type="submit">添加</button>
           </form>
           <ul class="vocab-list" id="links-list"></ul>
+        </div>
+
+        <!-- 数据备份 -->
+        <div class="card">
+          <div class="card-title">💾 数据</div>
+          <div class="sub-hint">备份与导出</div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+            <a class="btn-small" href="/api/export" style="text-align:center">📦 下载全部数据 (zip)</a>
+            <div class="muted-line">本地备份：python workbench\backup.py</div>
+          </div>
         </div>
 
       </div>

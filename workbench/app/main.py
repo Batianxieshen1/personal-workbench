@@ -333,6 +333,12 @@ def api_douyin_start(body: DouyinIn):
         raise HTTPException(400, str(e))
 
 
+# 注意：/history 必须注册在 /{job_id} 之前
+@app.get("/api/tools/douyin/history")
+def api_douyin_history():
+    return tools_mod.list_jobs()
+
+
 @app.get("/api/tools/douyin/{job_id}")
 def api_douyin_status(job_id: str):
     job = tools_mod.get_job(job_id)
@@ -389,6 +395,31 @@ def api_delete_link(link_id: str):
         return {"ok": True}
     except KeyError:
         raise HTTPException(404, f"收藏不存在：{link_id}")
+
+
+# ── 数据导出 ───────────────────────────────────────────────
+@app.get("/api/export")
+def api_export():
+    """打包 data/ 全部 JSON 为 zip 下载。"""
+    import io
+    import os
+    import zipfile
+
+    buf = io.BytesIO()
+    data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        if os.path.isdir(data_dir):
+            for root, _dirs, files in os.walk(data_dir):
+                for name in files:
+                    full = os.path.join(root, name)
+                    zf.write(full, os.path.relpath(full, data_dir))
+    buf.seek(0)
+    from fastapi.responses import StreamingResponse
+    return StreamingResponse(
+        buf,
+        media_type="application/zip",
+        headers={"Content-Disposition": f"attachment; filename=workbench-data-{dt.date.today().isoformat()}.zip"},
+    )
 
 
 # ── 首页聚合 ───────────────────────────────────────────────
