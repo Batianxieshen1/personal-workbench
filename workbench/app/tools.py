@@ -84,7 +84,7 @@ def _run(job_id: str, video_id: str, ocr: bool) -> None:
                 capture_output=True,
                 text=True,
                 timeout=TIMEOUT_SEC,
-                encoding="utf-8",
+                encoding="locale",  # Windows 中文系统脚本输出是 GBK，用系统区域编码解码
             )
             if r.returncode != 0:
                 last_err = (r.stderr or r.stdout)[-500:]
