@@ -248,6 +248,10 @@ body {
 .set-row { display: flex; gap: 8px; }
 .set-row .plan-input { flex: 1; min-width: 0; }
 
+/* 拖拽排序 */
+.card { cursor: grab; }
+.card.dragging { opacity: 0.6; border-style: dashed; cursor: grabbing; }
+
 /* 响应式：窄屏时侧边栏收窄 */
 @media (max-width: 760px) {
   .sidebar { width: 64px; padding: 16px 8px; }

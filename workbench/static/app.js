@@ -66,6 +66,22 @@ async function loadHomeCards() {
     document.getElementById("home-progress-body").textContent = "加载失败";
     document.getElementById("home-ielts-body").textContent = "加载失败";
   }
+  loadHomeLinks();
+}
+
+// 首页收藏卡
+async function loadHomeLinks() {
+  const body = document.getElementById("home-links-body");
+  try {
+    const links = await api("/api/links");
+    document.getElementById("home-links-count").textContent = links.length ? `(${links.length})` : "";
+    body.innerHTML = links.length
+      ? links.slice(0, 5).map((l) => `
+        <div class="home-idea"><a class="nav-link" href="${escapeHtml(l.url)}" target="_blank" rel="noopener">🔗 ${escapeHtml(l.title)}</a>${l.note ? `<span class="muted-line"> — ${escapeHtml(l.note)}</span>` : ""}</div>`).join("")
+      : '<div class="placeholder">还没有收藏，去工具页添加</div>';
+  } catch {
+    body.innerHTML = '<div class="placeholder">收藏加载失败</div>';
+  }
 }
 
 // 首页灵感卡：今天有灵感就展示，没有就懒加载触发 AI 生成
@@ -418,14 +434,20 @@ function renderIdeasToday(items) {
   const listEl = document.getElementById("ideas-today-list");
   document.getElementById("ideas-today-count").textContent = items.length ? `(${items.length})` : "";
   listEl.innerHTML = items.length
-    ? items.map((i) => `
+    ? items.map((i) => {
+      const action = i.status === "done"
+        ? `<span class="vocab-stage">✅ 已采用</span>`
+        : i.status === "discarded"
+          ? `<button class="btn-small" data-idea-keep="${i.id}">捡回</button>`
+          : `<button class="btn-small ghost" data-idea-discard="${i.id}">丢弃</button>
+             <button class="btn-small" data-idea-adopt="${i.id}">✅ 采用</button>`;
+      return `
       <li class="vocab-item">
         <span class="vocab-meaning" style="flex:1">${escapeHtml(i.text)}</span>
         <span class="vocab-stage">${i.source === "ai" ? "🤖 AI" : "✍️ 手动"}</span>
-        ${i.status === "kept"
-          ? `<button class="btn-small ghost" data-idea-discard="${i.id}">丢弃</button>`
-          : `<button class="btn-small" data-idea-keep="${i.id}">捡回</button>`}
-      </li>`).join("")
+        ${action}
+      </li>`;
+    }).join("")
     : '<li class="vocab-empty">今日还没有灵感</li>';
 }
 
@@ -476,14 +498,17 @@ document.getElementById("ideas-form").addEventListener("submit", async (e) => {
   loadIdeasPage();
 });
 
-// 收藏/丢弃（事件委托）
+// 收藏/丢弃/采用（事件委托）
 document.getElementById("ideas-today-list").addEventListener("click", async (e) => {
   const discard = e.target.closest("[data-idea-discard]");
   const keep = e.target.closest("[data-idea-keep]");
-  if (!discard && !keep) return;
-  const id = (discard || keep).dataset.ideaDiscard || (discard || keep).dataset.ideaKeep;
+  const adopt = e.target.closest("[data-idea-adopt]");
+  if (!discard && !keep && !adopt) return;
+  const el = discard || keep || adopt;
+  const id = el.dataset.ideaDiscard || el.dataset.ideaKeep || el.dataset.ideaAdopt;
+  const status = discard ? "discarded" : adopt ? "done" : "kept";
   try {
-    await api(`/api/ideas/${id}`, { method: "PATCH", body: JSON.stringify({ status: discard ? "discarded" : "kept" }) });
+    await api(`/api/ideas/${id}`, { method: "PATCH", body: JSON.stringify({ status }) });
   } catch { /* 兜底 */ }
   loadIdeasPage();
   loadHomeCards();
@@ -501,18 +526,50 @@ function isoWeek(date) {
 
 async function loadReviewPage() {
   const today = new Date().toISOString().slice(0, 10);
-  document.getElementById("review-date-label").textContent = `（${today}）`;
+  document.getElementById("review-date-picker").value = today;
+  loadReviewForDate(today);
+  loadContentReview();
   const week = isoWeek(new Date());
   document.getElementById("weekly-label").textContent = `（${week}）`;
-  try {
-    const r = await api(`/api/reviews?date=${today}`);
-    document.getElementById("review-summary").value = r.summary || "";
-  } catch { /* 保持空 */ }
   try {
     const w = await api(`/api/weekly?week=${week}`);
     if (w.summary) document.getElementById("weekly-summary").value = w.summary;
   } catch { /* 保持空 */ }
 }
+
+async function loadReviewForDate(dateStr) {
+  document.getElementById("review-date-label").textContent = `（${dateStr}）`;
+  try {
+    const r = await api(`/api/reviews?date=${dateStr}`);
+    document.getElementById("review-summary").value = r.summary || "";
+  } catch { /* 保持空 */ }
+}
+
+// 内容复盘：灵感状态统计
+async function loadContentReview() {
+  const el = document.getElementById("content-review-body");
+  try {
+    const r = await api("/api/reviews/content");
+    const { stats, adopted } = r;
+    el.innerHTML = `
+      <div class="board-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="board-stat"><div class="num">${stats.kept}</div><div class="label">🔖 收藏待做</div></div>
+        <div class="board-stat"><div class="num">${stats.done}</div><div class="label">✅ 已采用</div></div>
+        <div class="board-stat"><div class="num">${stats.discarded}</div><div class="label">🗑 已丢弃</div></div>
+      </div>
+      <div class="muted-line" style="margin:12px 0 6px">已采用的点子：</div>
+      ${adopted.length ? adopted.slice(0, 10).map((i) =>
+        `<div class="home-idea">✅ ${escapeHtml(i.text)} <span class="muted-line">(${i.date})</span></div>`).join("")
+        : '<div class="placeholder">还没有采用任何灵感，去灵感页把点子变成现实 🚀</div>'}`;
+  } catch {
+    el.innerHTML = '<div class="placeholder">内容复盘加载失败</div>';
+  }
+}
+
+// 日期选择器：回看历史总结
+document.getElementById("review-date-picker").addEventListener("change", (e) => {
+  if (e.target.value) loadReviewForDate(e.target.value);
+});
 
 document.getElementById("review-ai-btn").addEventListener("click", async () => {
   const btn = document.getElementById("review-ai-btn");
@@ -698,6 +755,80 @@ document.getElementById("set-coords-btn").addEventListener("click", async () => 
   }
 });
 
+// 雅思任务模板：一键把常用任务加进今日计划
+const IELTS_TEMPLATE = [
+  "背 50 个雅思单词",
+  "雅思听力练习 1 套",
+  "精读 1 篇英文文章",
+  "口语话题练习 5 分钟",
+];
+
+document.getElementById("ielts-template-btn").addEventListener("click", async () => {
+  const statusEl = document.getElementById("ielts-template-status");
+  try {
+    // 已有的计划文本，避免重复添加
+    const plan = await api("/api/plan");
+    const existing = new Set(plan.items.map((i) => i.text));
+    let added = 0;
+    for (const t of IELTS_TEMPLATE) {
+      if (!existing.has(t)) {
+        await api("/api/plan/items", { method: "POST", body: JSON.stringify({ text: t }) });
+        added++;
+      }
+    }
+    statusEl.textContent = added ? `✅ 已添加 ${added} 项到今日计划` : "这些任务今天已经有了";
+  } catch {
+    statusEl.textContent = "❌ 添加失败";
+  }
+});
+
+// ── 首页卡片拖拽排序（localStorage 记住顺序） ──
+const HOME_ORDER_KEY = "home-card-order";
+
+function applyHomeOrder() {
+  try {
+    const order = JSON.parse(localStorage.getItem(HOME_ORDER_KEY));
+    if (!Array.isArray(order)) return;
+    const grid = document.querySelector("#page-home .grid");
+    const cards = grid.querySelectorAll(".card");
+    const byId = new Map(cards.forEach ? [...cards].map((c) => [c.id, c]) : []);
+    order.forEach((id) => {
+      const card = byId.get(id);
+      if (card) grid.appendChild(card);
+    });
+  } catch { /* 忽略损坏的存储 */ }
+}
+
+function setupHomeDrag() {
+  const grid = document.querySelector("#page-home .grid");
+  let dragged = null;
+  grid.addEventListener("dragstart", (e) => {
+    const card = e.target.closest(".card");
+    if (!card) return;
+    dragged = card;
+    card.classList.add("dragging");
+    e.dataTransfer.effectAllowed = "move";
+  });
+  grid.addEventListener("dragend", (e) => {
+    const card = e.target.closest(".card");
+    if (card) card.classList.remove("dragging");
+    // 保存新顺序
+    const order = [...grid.querySelectorAll(".card")].map((c) => c.id);
+    localStorage.setItem(HOME_ORDER_KEY, JSON.stringify(order));
+  });
+  grid.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    if (!dragged) return;
+    const target = e.target.closest(".card");
+    if (!target || target === dragged) return;
+    const rect = target.getBoundingClientRect();
+    const after = e.clientY > rect.top + rect.height / 2;
+    grid.insertBefore(dragged, after ? target.nextSibling : target);
+  });
+}
+
 // ── 启动 ──
 window.addEventListener("hashchange", navigate);
+applyHomeOrder();
+setupHomeDrag();
 navigate();
