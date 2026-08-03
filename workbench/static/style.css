@@ -252,6 +252,13 @@ body {
 .card { cursor: grab; }
 .card.dragging { opacity: 0.6; border-style: dashed; cursor: grabbing; }
 
+/* 番茄钟 */
+.pomodoro-time {
+  text-align: center; font-size: 40px; font-weight: 700;
+  font-variant-numeric: tabular-nums; letter-spacing: 1px;
+  color: var(--accent-ink); padding: 6px 0;
+}
+
 /* 响应式：窄屏时侧边栏收窄 */
 @media (max-width: 760px) {
   .sidebar { width: 64px; padding: 16px 8px; }

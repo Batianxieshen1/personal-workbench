@@ -177,6 +177,23 @@ def api_progress():
     return progress_mod.load_progress()
 
 
+@app.get("/api/plan-info")
+def api_plan_info():
+    return progress_mod.load_plan()
+
+
+class StagePatch(BaseModel):
+    done: bool
+
+
+@app.patch("/api/progress/stages/{index}")
+def api_toggle_stage(index: int, body: StagePatch):
+    try:
+        return progress_mod.toggle_stage(progress_mod.PROGRESS_FILE, index, body.done)
+    except IndexError:
+        raise HTTPException(404, f"阶段不存在：{index}")
+
+
 # ── 雅思 ───────────────────────────────────────────────────
 @app.get("/api/ielts")
 def api_get_ielts():

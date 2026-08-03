@@ -54,3 +54,48 @@ def load_progress(path: str | None = None) -> dict:
             return parse_markdown(f.read())
     except FileNotFoundError:
         return dict(_EMPTY, missing=True)
+
+
+# ── 增强：备考计划解析 + 阶段写回 ─────────────────────────
+
+PLAN_FILE = os.path.join(PROJECT_ROOT, "study_plan.md")
+
+
+def parse_plan_stages(text: str) -> list:
+    """解析 study_plan.md 的「阶段安排」：1. ✅ xxx / 2. ⬜ xxx。"""
+    stages = []
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line or line[0].isdigit() is False:
+            continue
+        m = re.match(r"^\d+\.\s*(✅|⬜|\[x\]|\[ \])\s*(.+)$", line)
+        if m:
+            stages.append({"done": m.group(1) in ("✅", "[x]"), "text": m.group(2).strip()})
+    return stages
+
+
+def load_plan(path: str | None = None) -> dict:
+    p = path or PLAN_FILE
+    try:
+        with open(p, "r", encoding="utf-8") as f:
+            stages = parse_plan_stages(f.read())
+        return {"stages": stages, "missing": False}
+    except FileNotFoundError:
+        return {"stages": [], "missing": True}
+
+
+def toggle_stage(path: str, index: int, done: bool) -> dict:
+    """勾选/取消勾选 study_progress.md 中第 index 个阶段项，原样写回。"""
+    with open(path, "r", encoding="utf-8") as f:
+        lines = f.read().splitlines()
+    found = 0
+    for i, line in enumerate(lines):
+        if re.match(r"^\s*- \[[ x]\]", line):
+            if found == index:
+                mark = "x" if done else " "
+                lines[i] = re.sub(r"^(\s*- )\[[ x]\]", rf"\1[{mark}]", line)
+                with open(path, "w", encoding="utf-8") as f:
+                    f.write("\n".join(lines) + "\n")
+                return parse_markdown("\n".join(lines))
+            found += 1
+    raise IndexError(f"阶段索引越界：{index}")

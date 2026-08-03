@@ -261,6 +261,7 @@ document.getElementById("plan-list").addEventListener("click", async (e) => {
 
 // ── 学习页 ──
 async function loadStudyPage() {
+  loadStudyPlan();
   try {
     const p = await api("/api/progress");
     renderStudy(p);
@@ -269,20 +270,42 @@ async function loadStudyPage() {
   }
 }
 
+// 备考计划卡
+async function loadStudyPlan() {
+  const el = document.getElementById("study-plan-stages");
+  try {
+    const plan = await api("/api/plan-info");
+    if (plan.missing || !plan.stages.length) {
+      el.innerHTML = '<li class="vocab-empty">未找到 study_plan.md</li>';
+      return;
+    }
+    el.innerHTML = plan.stages
+      .map((s) => `
+      <li class="stage-item ${s.done ? "done" : ""}">
+        <span class="stage-mark">${s.done ? "✅" : "⬜"}</span>
+        <span class="stage-text">${escapeHtml(s.text)}</span>
+      </li>`)
+      .join("");
+  } catch {
+    el.innerHTML = '<li class="vocab-empty">加载失败</li>';
+  }
+}
+
+// 阶段勾选：点击写回 study_progress.md
 function renderStudy(p) {
   document.getElementById("study-subject").textContent = p.subject || "（未设置科目）";
   document.getElementById("study-meta").textContent =
     `最后更新 ${p.updated || "—"} · 阶段完成 ${p.done_count}/${p.total_count}`;
 
-  // 阶段清单
+  // 阶段清单（可点击勾选）
   const stagesEl = document.getElementById("study-stages");
   if (!p.stages.length) {
     stagesEl.innerHTML = '<li class="vocab-empty">暂无阶段记录</li>';
   } else {
     stagesEl.innerHTML = p.stages
-      .map((s) => `
-      <li class="stage-item ${s.done ? "done" : ""}">
-        <span class="stage-mark">${s.done ? "✅" : "⬜"}</span>
+      .map((s, i) => `
+      <li class="stage-item ${s.done ? "done" : ""}" style="cursor:pointer">
+        <button class="plan-check ${s.done ? "checked" : ""}" data-stage="${i}" title="点击切换完成状态">✓</button>
         <span class="stage-text">${escapeHtml(s.text)}</span>
       </li>`)
       .join("");
@@ -300,6 +323,70 @@ function renderStudy(p) {
         .join("")}`;
   }
 }
+
+// 勾选事件委托
+document.getElementById("study-stages").addEventListener("click", async (e) => {
+  const btn = e.target.closest("[data-stage]");
+  if (!btn) return;
+  const index = parseInt(btn.dataset.stage, 10);
+  const willDone = !btn.classList.contains("checked");
+  try {
+    await api(`/api/progress/stages/${index}`, {
+      method: "PATCH",
+      body: JSON.stringify({ done: willDone }),
+    });
+  } catch { /* 兜底 */ }
+  loadStudyPage();
+  loadHomeCards();
+});
+
+// ── 番茄钟 ──
+const POMODORO_SECONDS = 25 * 60;
+let pomodoroLeft = POMODORO_SECONDS;
+let pomodoroTimer = null;
+
+function renderPomodoro() {
+  const m = String(Math.floor(pomodoroLeft / 60)).padStart(2, "0");
+  const s = String(pomodoroLeft % 60).padStart(2, "0");
+  document.getElementById("pomodoro-time").textContent = `${m}:${s}`;
+}
+
+document.getElementById("pomodoro-start").addEventListener("click", () => {
+  const btn = document.getElementById("pomodoro-start");
+  if (pomodoroTimer) {
+    clearInterval(pomodoroTimer);
+    pomodoroTimer = null;
+    btn.textContent = "▶ 继续";
+    document.getElementById("pomodoro-status").textContent = "已暂停";
+    return;
+  }
+  btn.textContent = "⏸ 暂停";
+  document.getElementById("pomodoro-status").textContent = "专注中…";
+  pomodoroTimer = setInterval(() => {
+    pomodoroLeft -= 1;
+    if (pomodoroLeft <= 0) {
+      clearInterval(pomodoroTimer);
+      pomodoroTimer = null;
+      pomodoroLeft = POMODORO_SECONDS;
+      btn.textContent = "▶ 开始";
+      document.getElementById("pomodoro-status").textContent = "🍅 完成！休息一下吧";
+      new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=").play().catch(() => {});
+      return;
+    }
+    renderPomodoro();
+  }, 1000);
+});
+
+document.getElementById("pomodoro-reset").addEventListener("click", () => {
+  if (pomodoroTimer) {
+    clearInterval(pomodoroTimer);
+    pomodoroTimer = null;
+  }
+  pomodoroLeft = POMODORO_SECONDS;
+  document.getElementById("pomodoro-start").textContent = "▶ 开始";
+  document.getElementById("pomodoro-status").textContent = "";
+  renderPomodoro();
+});
 
 // ── 雅思页 ──
 async function loadIeltsPage() {

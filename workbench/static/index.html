@@ -97,6 +97,20 @@
         <div class="card">
           <div class="card-title">🚩 当前阶段</div>
           <ul class="stage-list" id="study-stages"></ul>
+          <div class="muted-line" style="margin-top:8px">点击勾选会写回 study_progress.md</div>
+        </div>
+        <div class="card">
+          <div class="card-title">🗺 备考计划</div>
+          <ul class="stage-list" id="study-plan-stages"></ul>
+        </div>
+        <div class="card">
+          <div class="card-title">🍅 番茄钟</div>
+          <div class="pomodoro-time" id="pomodoro-time">25:00</div>
+          <div style="display:flex;gap:8px;justify-content:center;margin-top:10px">
+            <button class="btn-small" id="pomodoro-start">▶ 开始</button>
+            <button class="btn-small ghost" id="pomodoro-reset">↺ 重置</button>
+          </div>
+          <div id="pomodoro-status" class="muted-line" style="text-align:center;margin-top:8px"></div>
         </div>
         <div class="card">
           <div class="card-title">📝 测验记录</div>
