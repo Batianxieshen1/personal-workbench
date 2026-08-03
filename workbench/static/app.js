@@ -29,6 +29,7 @@ function navigate() {
   if (page === "ielts") loadIeltsPage();
   if (page === "ideas") loadIdeasPage();
   if (page === "review") loadReviewPage();
+  if (page === "tools") loadToolsPage();
 }
 
 // ── 首页：各卡片并行加载，互不拖累 ──
@@ -569,6 +570,131 @@ document.getElementById("weekly-save-btn").addEventListener("click", async () =>
     document.getElementById("weekly-label").textContent = "（已保存 ✅）";
   } catch {
     document.getElementById("weekly-label").textContent = "（保存失败）";
+  }
+});
+
+// ── 工具页 ──
+async function loadToolsPage() {
+  try {
+    const cfg = await api("/api/config");
+    document.getElementById("set-nickname").value = cfg.nickname;
+    document.getElementById("set-city").value = cfg.city;
+    document.getElementById("set-lat").value = cfg.lat;
+    document.getElementById("set-lon").value = cfg.lon;
+    document.getElementById("set-status").textContent = `当前：${cfg.city}（${cfg.lat}, ${cfg.lon}）`;
+  } catch { /* 表单保持空 */ }
+}
+
+// 抖音提取：提交 → 轮询任务 → 渲染结果
+document.getElementById("douyin-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const input = document.getElementById("douyin-input");
+  const text = input.value.trim();
+  const ocr = document.getElementById("douyin-ocr").checked;
+  if (!text) return;
+  const box = document.getElementById("douyin-result");
+  box.innerHTML = '<div class="muted-line">⏳ 已提交，正在后台解析（语音转文字需要几分钟）…</div>';
+  try {
+    const { job_id } = await api("/api/tools/douyin", {
+      method: "POST",
+      body: JSON.stringify({ text, ocr }),
+    });
+    pollDouyinJob(job_id);
+  } catch (err) {
+    box.innerHTML = `<div class="muted-line">❌ ${escapeHtml(err.message)}</div>`;
+  }
+});
+
+async function pollDouyinJob(jobId) {
+  const box = document.getElementById("douyin-result");
+  for (let i = 0; i < 600; i++) {  // 最多轮询 10 分钟
+    await new Promise((r) => setTimeout(r, 1000));
+    let job;
+    try {
+      job = await api(`/api/tools/douyin/${jobId}`);
+    } catch {
+      box.innerHTML = '<div class="muted-line">❌ 任务查询失败</div>';
+      return;
+    }
+    if (job.status === "running" || job.status === "pending") {
+      box.innerHTML = `<div class="muted-line">⏳ ${job.status === "running" ? "解析中（通常 1-5 分钟）" : "排队中"}…</div>`;
+      continue;
+    }
+    if (job.status === "error") {
+      box.innerHTML = `<div class="muted-line">❌ 提取失败：${escapeHtml(job.error || "未知错误")}</div>`;
+      return;
+    }
+    // done
+    const r = job.result || {};
+    const meta = r.metadata || {};
+    const lines = [];
+    if (meta.标题) lines.push(`📌 ${meta.标题}`);
+    if (meta.作者) lines.push(`👤 ${meta.作者}`);
+    if (meta["时长(秒)"]) lines.push(`⏱ ${Math.round(meta["时长(秒)"] / 60)} 分钟`);
+    if (typeof r.transcript_length === "number") lines.push(`🗣 字幕 ${r.transcript_length} 字`);
+    if (typeof r.ocr_count === "number") lines.push(`🔍 OCR ${r.ocr_count} 段`);
+    if (r.report_path) lines.push(`📄 报告：${r.report_path}`);
+    box.innerHTML = lines.length
+      ? `<div class="muted-line">✅ 提取完成</div>${lines.map((l) => `<div class="home-idea">${l}</div>`).join("")}`
+      : `<div class="muted-line">✅ 完成（无摘要输出）</div>`;
+    return;
+  }
+  box.innerHTML = '<div class="muted-line">⏱ 轮询超时，请稍后在任务列表查看</div>';
+}
+
+// Obsidian 跳转：从服务端拿 URI 后交给浏览器协议处理器
+document.querySelectorAll(".obsidian-btn").forEach((btn) => {
+  btn.addEventListener("click", async () => {
+    const kind = btn.dataset.obsidian;
+    try {
+      const { uri } = await api(`/api/obsidian/${kind}`);
+      window.location.href = uri;
+    } catch {
+      btn.textContent = "获取失败";
+      setTimeout(() => btn.textContent = kind === "daily" ? "📅 打开/新建今日日记" : "打开失败", 1500);
+    }
+  });
+});
+
+// 设置：昵称 / 城市 / 手动坐标
+document.getElementById("set-nickname-btn").addEventListener("click", async () => {
+  const nickname = document.getElementById("set-nickname").value.trim();
+  if (!nickname) return;
+  try {
+    await api("/api/config/nickname", { method: "PATCH", body: JSON.stringify({ nickname }) });
+    document.getElementById("set-status").textContent = "✅ 昵称已保存";
+    loadGreeting();
+  } catch {
+    document.getElementById("set-status").textContent = "❌ 保存失败";
+  }
+});
+
+document.getElementById("set-city-btn").addEventListener("click", async () => {
+  const city = document.getElementById("set-city").value.trim();
+  if (!city) return;
+  try {
+    const cfg = await api("/api/config/city", { method: "PATCH", body: JSON.stringify({ city }) });
+    document.getElementById("set-lat").value = cfg.lat;
+    document.getElementById("set-lon").value = cfg.lon;
+    document.getElementById("set-status").textContent = `✅ 已定位到 ${cfg.city}`;
+  } catch (e) {
+    document.getElementById("set-status").textContent = "❌ 找不到该城市，请用手动坐标";
+  }
+});
+
+document.getElementById("set-coords-btn").addEventListener("click", async () => {
+  const city = document.getElementById("set-city").value.trim() || "自定义";
+  const lat = parseFloat(document.getElementById("set-lat").value);
+  const lon = parseFloat(document.getElementById("set-lon").value);
+  if (Number.isNaN(lat) || Number.isNaN(lon)) {
+    document.getElementById("set-status").textContent = "❌ 坐标必须是数字";
+    return;
+  }
+  try {
+    await api("/api/config/coords", { method: "PATCH", body: JSON.stringify({ city, lat, lon }) });
+    document.getElementById("set-status").textContent = `✅ 已设置 ${city}（${lat}, ${lon}）`;
+  } catch {
+    document.getElementById("set-status").textContent = "❌ 保存失败";
   }
 });
 

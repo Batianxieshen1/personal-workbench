@@ -168,7 +168,57 @@
     </section>
     <section class="page" id="page-tools">
       <div class="page-head"><h1>🛠 工具</h1></div>
-      <div class="placeholder big">抖音提取 · Obsidian 联动 · M4 建设中</div>
+      <div class="grid">
+
+        <!-- 抖音提取 -->
+        <div class="card card-wide">
+          <div class="card-title">🎬 抖音视频提取</div>
+          <div class="sub-hint">粘贴分享链接或视频 ID，后台解析：元数据 + 语音转文字（+可选 OCR）</div>
+          <form class="plan-form" id="douyin-form">
+            <input class="plan-input" id="douyin-input" type="text" placeholder="https://v.douyin.com/xxxx/ 或 视频ID" autocomplete="off">
+            <label class="checkbox-label"><input type="checkbox" id="douyin-ocr"> OCR（慢，慎用）</label>
+            <button class="btn-small" type="submit">🚀 提取</button>
+          </form>
+          <div id="douyin-result" class="card-body"></div>
+        </div>
+
+        <!-- Obsidian 联动 -->
+        <div class="card">
+          <div class="card-title">📓 Obsidian 联动</div>
+          <div class="sub-hint">一键跳转到你的知识库（需要已安装 Obsidian）</div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+            <a class="btn-small obsidian-btn" href="javascript:void(0)" data-obsidian="daily">📅 打开/新建今日日记</a>
+            <a class="btn-small ghost obsidian-btn" href="javascript:void(0)" data-obsidian="study-note">📚 打开备考笔记</a>
+            <a class="btn-small ghost obsidian-btn" href="javascript:void(0)" data-obsidian="vault">🗂 打开知识库根目录</a>
+          </div>
+        </div>
+
+        <!-- 设置 -->
+        <div class="card">
+          <div class="card-title">⚙️ 设置</div>
+          <div class="sub-hint">昵称与天气城市</div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
+            <label class="set-label">昵称
+              <input class="plan-input" id="set-nickname" type="text" placeholder="你的昵称">
+            </label>
+            <label class="set-label">城市（自动查坐标）
+              <input class="plan-input" id="set-city" type="text" placeholder="如：深圳">
+            </label>
+            <div style="display:flex;gap:8px">
+              <button class="btn-small" id="set-nickname-btn">💾 保存昵称</button>
+              <button class="btn-small ghost" id="set-city-btn">💾 保存城市</button>
+            </div>
+            <div class="set-label" style="margin-bottom:4px">或手动坐标（县级小地名查不到时用）</div>
+            <div class="set-row">
+              <input class="plan-input" id="set-lat" type="number" step="any" placeholder="纬度 如 23.93">
+              <input class="plan-input" id="set-lon" type="number" step="any" placeholder="经度 如 115.76">
+              <button class="btn-small" id="set-coords-btn">设置</button>
+            </div>
+            <div id="set-status" class="muted-line"></div>
+          </div>
+        </div>
+
+      </div>
     </section>
 
   </main>
