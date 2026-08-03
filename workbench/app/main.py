@@ -14,6 +14,7 @@ from . import config as config_mod
 from . import deepseek
 from . import ideas as ideas_mod
 from . import ielts as ielts_mod
+from . import links as links_mod
 from . import obsidian as obsidian_mod
 from . import plan as plan_mod
 from . import progress as progress_mod
@@ -91,6 +92,18 @@ class CoordsIn(BaseModel):
     city: str
     lat: float
     lon: float
+
+
+class LinkIn(BaseModel):
+    title: str
+    url: str
+    note: str = ""
+
+
+class LinkPatch(BaseModel):
+    title: str | None = None
+    url: str | None = None
+    note: str | None = None
 
 
 # ── 今日计划 ───────────────────────────────────────────────
@@ -265,6 +278,11 @@ def api_review_ai_draft(body: ReviewIn):
         raise HTTPException(503, {"reason": e.reason, "message": str(e)})
 
 
+@app.get("/api/reviews/content")
+def api_content_review():
+    return reviews_mod.content_review()
+
+
 @app.get("/api/weekly")
 def api_get_weekly(week: str):
     return reviews_mod.get_weekly(week)
@@ -315,6 +333,39 @@ def api_obsidian_vault():
 @app.get("/api/obsidian/study-note")
 def api_obsidian_study_note():
     return {"uri": obsidian_mod.study_note_uri()}
+
+
+# ── 资源收藏 ───────────────────────────────────────────────
+@app.get("/api/links")
+def api_list_links():
+    return links_mod.list_all()
+
+
+@app.post("/api/links")
+def api_add_link(body: LinkIn):
+    try:
+        return links_mod.add(body.title, body.url, body.note)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.patch("/api/links/{link_id}")
+def api_update_link(link_id: str, body: LinkPatch):
+    try:
+        return links_mod.update(link_id, title=body.title, url=body.url, note=body.note)
+    except KeyError:
+        raise HTTPException(404, f"收藏不存在：{link_id}")
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.delete("/api/links/{link_id}")
+def api_delete_link(link_id: str):
+    try:
+        links_mod.delete(link_id)
+        return {"ok": True}
+    except KeyError:
+        raise HTTPException(404, f"收藏不存在：{link_id}")
 
 
 # ── 首页聚合 ───────────────────────────────────────────────

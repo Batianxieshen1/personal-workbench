@@ -104,3 +104,20 @@ def save_weekly(week: str, summary: str) -> dict:
     data = {"week": week, "summary": summary.strip()}
     storage.save(_weekly_file(week), data)
     return data
+
+
+def content_review() -> dict:
+    """内容复盘：灵感按状态统计（收藏/已采用/丢弃）+ 已采用列表。
+
+    状态说明：kept=收藏待做，done=已做成内容，discarded=丢弃。
+    """
+    items = ideas.list_all()
+    stats = {"kept": 0, "done": 0, "discarded": 0}
+    adopted = []
+    for i in items:
+        st = i.get("status", "kept")
+        stats[st] = stats.get(st, 0) + 1
+        if st == "done":
+            adopted.append(i)
+    adopted.sort(key=lambda i: i["created_at"], reverse=True)
+    return {"stats": stats, "adopted": adopted}
