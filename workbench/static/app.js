@@ -632,6 +632,7 @@ document.getElementById("weekly-save-btn").addEventListener("click", async () =>
 
 // ── 工具页 ──
 async function loadToolsPage() {
+  loadLinksManager();
   try {
     const cfg = await api("/api/config");
     document.getElementById("set-nickname").value = cfg.nickname;
@@ -826,6 +827,53 @@ function setupHomeDrag() {
     grid.insertBefore(dragged, after ? target.nextSibling : target);
   });
 }
+
+// ── 资源收藏管理（工具页） ──
+async function loadLinksManager() {
+  const listEl = document.getElementById("links-list");
+  try {
+    const links = await api("/api/links");
+    document.getElementById("links-count").textContent = links.length ? `(${links.length})` : "";
+    listEl.innerHTML = links.length
+      ? links.map((l) => `
+        <li class="vocab-item">
+          <a class="nav-link" href="${escapeHtml(l.url)}" target="_blank" rel="noopener" style="min-width:100px">${escapeHtml(l.title)}</a>
+          <span class="vocab-meaning" style="flex:1">${escapeHtml(l.url)}</span>
+          <button class="plan-del" data-link-del="${l.id}" title="删除">✕</button>
+        </li>`).join("")
+      : '<li class="vocab-empty">还没有收藏</li>';
+  } catch {
+    listEl.innerHTML = '<li class="vocab-empty">加载失败</li>';
+  }
+}
+
+document.getElementById("links-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const title = document.getElementById("link-title").value.trim();
+  const url = document.getElementById("link-url").value.trim();
+  if (!title || !url) return;
+  document.getElementById("link-title").value = "";
+  document.getElementById("link-url").value = "";
+  try {
+    await api("/api/links", { method: "POST", body: JSON.stringify({ title, url }) });
+  } catch (err) {
+    document.getElementById("links-count").textContent = "（链接必须以 http(s):// 开头）";
+    setTimeout(() => loadLinksManager(), 1500);
+    return;
+  }
+  loadLinksManager();
+  loadHomeLinks();
+});
+
+document.getElementById("links-list").addEventListener("click", async (e) => {
+  const btn = e.target.closest("[data-link-del]");
+  if (!btn) return;
+  try {
+    await api(`/api/links/${btn.dataset.linkDel}`, { method: "DELETE" });
+  } catch { /* 兜底 */ }
+  loadLinksManager();
+  loadHomeLinks();
+});
 
 // ── 启动 ──
 window.addEventListener("hashchange", navigate);
