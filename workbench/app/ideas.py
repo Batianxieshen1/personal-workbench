@@ -45,6 +45,7 @@ def _make_item(text: str, source: str, date: str) -> dict:
         "source": source,
         "date": date,
         "status": "kept",
+        "note": "",
         "created_at": dt.datetime.now().isoformat(),
     }
 
@@ -90,6 +91,17 @@ def set_status(idea_id: str, status: str) -> dict:
     for i in data["ideas"]:
         if i["id"] == idea_id:
             i["status"] = status
+            _save(data)
+            return i
+    raise KeyError(idea_id)
+
+
+def set_note(idea_id: str, note: str) -> dict:
+    """更新灵感备注/细化思路。"""
+    data = _data()
+    for i in data["ideas"]:
+        if i["id"] == idea_id:
+            i["note"] = note.strip()
             _save(data)
             return i
     raise KeyError(idea_id)

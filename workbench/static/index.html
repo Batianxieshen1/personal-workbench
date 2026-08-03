@@ -193,6 +193,19 @@
             <input class="plan-input" id="ideas-text" type="text" placeholder="随手记下一个点子…" autocomplete="off">
             <button class="btn-small" type="submit">添加</button>
           </form>
+          <div style="display:flex;gap:6px;margin:10px 0 8px">
+            <select class="plan-input" id="ideas-filter-source" style="max-width:110px">
+              <option value="all">全部来源</option>
+              <option value="ai">🤖 AI</option>
+              <option value="manual">✍️ 手动</option>
+            </select>
+            <select class="plan-input" id="ideas-filter-status" style="max-width:120px">
+              <option value="all">全部状态</option>
+              <option value="kept">🔖 收藏</option>
+              <option value="done">✅ 已采用</option>
+              <option value="discarded">🗑 已丢弃</option>
+            </select>
+          </div>
           <div class="sub-hint">历史灵感（最新在前）</div>
           <ul class="vocab-list" id="ideas-all-list"></ul>
         </div>

@@ -600,8 +600,9 @@ function renderIdeasToday(items) {
              <button class="btn-small" data-idea-adopt="${i.id}">✅ 采用</button>`;
       return `
       <li class="vocab-item">
-        <span class="vocab-meaning" style="flex:1">${escapeHtml(i.text)}</span>
+        <span class="vocab-meaning" style="flex:1">${escapeHtml(i.text)}${i.note ? `<div class="muted-line">📝 ${escapeHtml(i.note)}</div>` : ""}</span>
         <span class="vocab-stage">${i.source === "ai" ? "🤖 AI" : "✍️ 手动"}</span>
+        <button class="btn-small ghost" data-idea-note="${i.id}" title="写备注">📝</button>
         ${action}
       </li>`;
     }).join("")
@@ -610,15 +611,29 @@ function renderIdeasToday(items) {
 
 function renderIdeasAll(all) {
   const listEl = document.getElementById("ideas-all-list");
-  listEl.innerHTML = all.length
-    ? all.slice(0, 20).map((i) => `
+  const src = document.getElementById("ideas-filter-source").value;
+  const st = document.getElementById("ideas-filter-status").value;
+  const filtered = all.filter((i) =>
+    (src === "all" || i.source === src) && (st === "all" || i.status === st));
+  listEl.innerHTML = filtered.length
+    ? filtered.slice(0, 30).map((i) => `
       <li class="vocab-item">
         <span class="vocab-word" style="min-width:80px">${escapeHtml(i.date)}</span>
-        <span class="vocab-meaning" style="flex:1">${escapeHtml(i.text)}</span>
-        <span class="vocab-stage">${i.status === "kept" ? "已收藏" : "已丢弃"}</span>
+        <span class="vocab-meaning" style="flex:1">${escapeHtml(i.text)}${i.note ? `<div class="muted-line">📝 ${escapeHtml(i.note)}</div>` : ""}</span>
+        <span class="vocab-stage">${i.status === "kept" ? "🔖 收藏" : i.status === "done" ? "✅ 已采用" : "🗑 已丢弃"}</span>
       </li>`).join("")
-    : '<li class="vocab-empty">还没有任何灵感，添加或生成一个吧</li>';
+    : '<li class="vocab-empty">没有匹配的灵感</li>';
 }
+
+// 历史筛选
+document.getElementById("ideas-filter-source").addEventListener("change", async () => {
+  const all = await api("/api/ideas");
+  renderIdeasAll(all);
+});
+document.getElementById("ideas-filter-status").addEventListener("change", async () => {
+  const all = await api("/api/ideas");
+  renderIdeasAll(all);
+});
 
 // 换一批：AI 不可用时显示"重新连接"按钮
 document.getElementById("ideas-generate-btn").addEventListener("click", async () => {
@@ -660,6 +675,18 @@ document.getElementById("ideas-today-list").addEventListener("click", async (e) 
   const discard = e.target.closest("[data-idea-discard]");
   const keep = e.target.closest("[data-idea-keep]");
   const adopt = e.target.closest("[data-idea-adopt]");
+  const noteBtn = e.target.closest("[data-idea-note]");
+  if (noteBtn) {
+    const current = noteBtn.closest(".vocab-item")?.querySelector(".muted-line")?.textContent?.replace(/^📝 /, "") || "";
+    const note = prompt("给这个灵感写备注/细化思路（可留空清除）：", current);
+    if (note === null) return;
+    try {
+      await api(`/api/ideas/${noteBtn.dataset.ideaNote}`, { method: "PATCH", body: JSON.stringify({ note }) });
+    } catch { /* 兜底 */ }
+    loadIdeasPage();
+    loadHomeCards();
+    return;
+  }
   if (!discard && !keep && !adopt) return;
   const el = discard || keep || adopt;
   const id = el.dataset.ideaDiscard || el.dataset.ideaKeep || el.dataset.ideaAdopt;

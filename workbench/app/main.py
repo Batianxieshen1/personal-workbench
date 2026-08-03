@@ -70,7 +70,8 @@ class IdeaIn(BaseModel):
 
 
 class IdeaPatch(BaseModel):
-    status: str
+    status: str | None = None
+    note: str | None = None
 
 
 class ReviewIn(BaseModel):
@@ -271,7 +272,9 @@ def api_add_idea(body: IdeaIn):
 @app.patch("/api/ideas/{idea_id}")
 def api_set_idea_status(idea_id: str, body: IdeaPatch):
     try:
-        return ideas_mod.set_status(idea_id, body.status)
+        if body.status is not None:
+            return ideas_mod.set_status(idea_id, body.status)
+        return ideas_mod.set_note(idea_id, body.note or "")
     except KeyError:
         raise HTTPException(404, f"灵感不存在：{idea_id}")
 
