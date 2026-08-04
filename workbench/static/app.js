@@ -42,6 +42,48 @@ function loadHome() {
   loadHomeCards();
   loadGuide();
   loadGuideNav();
+  loadNotify();
+}
+
+// ── 浏览器通知提醒 ──
+function notify(title, body) {
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  try { new Notification(title, { body }); } catch { /* 静默 */ }
+}
+
+async function checkAndNotify() {
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  try {
+    const due = await api("/api/vocab/due");
+    if (due.length) notify("⏰ 生词到期了", `今天有 ${due.length} 个生词要复习（艾宾浩斯）`);
+    const today = new Date().toISOString().slice(0, 10);
+    const r = await api(`/api/reviews?date=${today}`);
+    if (!r.summary) notify("📝 别忘了写总结", "今天的总结还没写，睡前花 2 分钟回顾一下");
+  } catch { /* 通知失败不影响使用 */ }
+}
+
+document.getElementById("notify-btn").addEventListener("click", async () => {
+  const btn = document.getElementById("notify-btn");
+  if (!("Notification" in window)) {
+    btn.textContent = "浏览器不支持";
+    return;
+  }
+  const perm = await Notification.requestPermission();
+  if (perm === "granted") {
+    btn.textContent = "🔔 已开启";
+    notify("✅ 提醒已开启", "生词到期 / 总结未写时会提醒你");
+    checkAndNotify();
+  } else {
+    btn.textContent = "🔕 被拒绝了（浏览器设置里开）";
+  }
+});
+
+// 已授权时每次回首页自动检查
+function loadNotify() {
+  if ("Notification" in window && Notification.permission === "granted") {
+    document.getElementById("notify-btn").textContent = "🔔 已开启";
+    checkAndNotify();
+  }
 }
 
 // ── 今日行动指南 ──
@@ -908,6 +950,26 @@ document.getElementById("review-save-btn").addEventListener("click", async () =>
     loadHomeCards();
   } catch {
     document.getElementById("review-date-label").textContent = "（保存失败）";
+  }
+});
+
+// 同步到 Obsidian 日记
+document.getElementById("review-obsidian-btn").addEventListener("click", async () => {
+  const date = document.getElementById("review-date-picker").value || new Date().toISOString().slice(0, 10);
+  const summary = document.getElementById("review-summary").value;
+  const statusEl = document.getElementById("review-obsidian-status");
+  if (!summary.trim()) {
+    statusEl.textContent = "❌ 总结是空的，先写或先保存";
+    return;
+  }
+  try {
+    const r = await api("/api/reviews/sync-obsidian", {
+      method: "POST",
+      body: JSON.stringify({ date, summary }),
+    });
+    statusEl.textContent = `✅ 已写入 ${date}.md（Obsidian 里刷新即可看到）`;
+  } catch {
+    statusEl.textContent = "❌ 同步失败";
   }
 });
 

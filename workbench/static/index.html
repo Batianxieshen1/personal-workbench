@@ -39,7 +39,9 @@
 
       <!-- 今日行动指南：打开第一眼看到 -->
       <div class="guide-card" id="guide-card">
-        <div class="guide-title">🗺 今日行动 <span class="plan-count" id="guide-count"></span></div>
+        <div class="guide-title">🗺 今日行动 <span class="plan-count" id="guide-count"></span>
+          <button class="btn-small ghost" id="notify-btn" style="padding:2px 10px;font-size:12px;float:right">🔔 开启提醒</button>
+        </div>
         <div class="guide-nav" id="guide-nav"></div>
         <ul class="guide-list" id="guide-list"></ul>
       </div>
@@ -233,7 +235,9 @@
           <div style="display:flex;gap:8px;margin-top:10px">
             <button class="btn-small" id="review-ai-btn">🤖 AI 起草</button>
             <button class="btn-small" id="review-save-btn">💾 保存</button>
+            <button class="btn-small ghost" id="review-obsidian-btn">📓 同步到 Obsidian 日记</button>
           </div>
+          <div id="review-obsidian-status" class="muted-line" style="margin-top:6px"></div>
         </div>
         <div class="card card-wide">
           <div class="card-title">📊 周报 <span class="plan-count" id="weekly-label"></span></div>

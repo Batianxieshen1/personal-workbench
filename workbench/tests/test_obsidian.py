@@ -27,3 +27,29 @@ def test_set_coords_does_not_break_other_fields(tmp_path, monkeypatch):
     config.set_nickname("小暴龙")
     config.set_coords("北京", 39.9, 116.4)
     assert config.get_config()["nickname"] == "小暴龙"
+
+
+def test_sync_daily_review_creates_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(obsidian, "VAULT_DIR", str(tmp_path / "我的知识库"))
+    p = obsidian.sync_daily_review("2026-08-04", "今天完成了统计页")
+    assert p.replace("\\", "/").endswith("01-日记/2026-08-04.md")  # Windows 路径是反斜杠
+    text = open(p, encoding="utf-8").read()
+    assert "今日总结" in text
+    assert "今天完成了统计页" in text
+
+
+def test_sync_daily_review_appends(tmp_path, monkeypatch):
+    monkeypatch.setattr(obsidian, "VAULT_DIR", str(tmp_path / "我的知识库"))
+    obsidian.sync_daily_review("2026-08-04", "第一条")
+    obsidian.sync_daily_review("2026-08-04", "第二条")
+    text = open(tmp_path / "我的知识库" / "01-日记" / "2026-08-04.md", encoding="utf-8").read()
+    assert text.count("今日总结") == 2
+
+
+def test_sync_daily_review_rejects_bad_date(tmp_path, monkeypatch):
+    monkeypatch.setattr(obsidian, "VAULT_DIR", str(tmp_path / "我的知识库"))
+    try:
+        obsidian.sync_daily_review("../../etc/passwd", "x")
+        assert False, "应当拒绝非法日期（防路径穿越）"
+    except ValueError:
+        pass

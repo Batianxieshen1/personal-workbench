@@ -312,6 +312,16 @@ def api_content_review():
     return reviews_mod.content_review()
 
 
+@app.post("/api/reviews/sync-obsidian")
+def api_sync_obsidian(body: ReviewIn):
+    """把今日总结追加到 Obsidian 日记。"""
+    try:
+        path = obsidian_mod.sync_daily_review(body.date, body.summary)
+        return {"ok": True, "path": path}
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
 @app.get("/api/weekly")
 def api_get_weekly(week: str):
     return reviews_mod.get_weekly(week)
