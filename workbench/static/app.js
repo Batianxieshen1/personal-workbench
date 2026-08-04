@@ -15,7 +15,7 @@ async function api(path, options = {}) {
 }
 
 // ── hash 路由 ──
-const PAGES = ["home", "study", "ielts", "ideas", "review", "tools"];
+const PAGES = ["home", "study", "ielts", "ideas", "review", "stats", "tools"];
 
 function navigate() {
   const hash = location.hash.replace(/^#\//, "") || "home";
@@ -29,6 +29,7 @@ function navigate() {
   if (page === "ielts") loadIeltsPage();
   if (page === "ideas") loadIdeasPage();
   if (page === "review") loadReviewPage();
+  if (page === "stats") loadStatsPage();
   if (page === "tools") loadToolsPage();
 }
 
@@ -938,6 +939,44 @@ document.getElementById("weekly-save-btn").addEventListener("click", async () =>
     document.getElementById("weekly-label").textContent = "（保存失败）";
   }
 });
+
+// ── 统计页 ──
+function setRing(el, pct) {
+  el.style.setProperty("--pct", Math.max(0, Math.min(100, pct)));
+  el.querySelector("span").textContent = `${Math.round(pct)}${el.dataset.unit || "%"}`;
+}
+
+async function loadStatsPage() {
+  try {
+    const s = await api("/api/stats");
+    // 连续天数（单位：天）
+    const streakEl = document.getElementById("stat-streak");
+    streakEl.dataset.unit = " 天";
+    streakEl.style.setProperty("--pct", Math.min(100, s.streak_days * 10));
+    streakEl.querySelector("span").textContent = `${s.streak_days} 天`;
+
+    // 本周完成率
+    setRing(document.getElementById("stat-week"), s.week.rate * 100);
+    document.getElementById("stat-week-detail").textContent =
+      `已完成 ${s.week.done}/${s.week.total} 项`;
+
+    // 生词本
+    const v = s.vocab;
+    document.getElementById("stat-vocab").innerHTML = `
+      <div class="muted-line">共 ${v.total} 个 · 复习中 ${v.active} · 已毕业 ${v.graduated} · 今日新增 ${v.added_today}</div>
+      <div class="skill-bar" style="margin-top:8px"><i style="width:${v.total ? Math.round(v.graduated / v.total * 100) : 0}%"></i></div>
+      <div class="muted-line" style="margin-top:6px">毕业率 ${v.total ? Math.round(v.graduated / v.total * 100) : 0}%</div>`;
+
+    // 灵感采用率
+    setRing(document.getElementById("stat-ideas"), s.ideas.adopt_rate * 100);
+    document.getElementById("stat-ideas-detail").textContent =
+      `已采用 ${s.ideas.done}/${s.ideas.total} · 收藏 ${s.ideas.kept} · 丢弃 ${s.ideas.discarded}`;
+  } catch {
+    document.querySelectorAll("#page-stats .card-body, #page-stats .stat-ring").forEach((el) => {
+      el.textContent = "加载失败";
+    });
+  }
+}
 
 // ── 工具页 ──
 async function loadToolsPage() {

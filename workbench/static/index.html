@@ -22,6 +22,7 @@
     <a class="nav-item" data-page="ielts" href="#/ielts">🎯 雅思</a>
     <a class="nav-item" data-page="ideas" href="#/ideas">💡 灵感</a>
     <a class="nav-item" data-page="review" href="#/review">📝 复盘</a>
+    <a class="nav-item" data-page="stats" href="#/stats">📊 统计</a>
     <a class="nav-item" data-page="tools" href="#/tools">🛠 工具</a>
     <div class="sidebar-footer" id="sidebar-nickname">同学</div>
   </nav>
@@ -247,6 +248,30 @@
           <div class="card-title">🎬 内容复盘</div>
           <div class="sub-hint">灵感 → 做成内容 → 效果追踪</div>
           <div id="content-review-body" class="card-body">加载中…</div>
+        </div>
+      </div>
+    </section>
+    <section class="page" id="page-stats">
+      <div class="page-head"><h1>📊 统计</h1></div>
+      <div class="grid">
+        <div class="card">
+          <div class="card-title">🔥 连续学习</div>
+          <div class="stat-ring" id="stat-streak" style="--pct:0"><span>0 天</span></div>
+          <div class="muted-line" style="text-align:center">有完成记录的最长连续天数</div>
+        </div>
+        <div class="card">
+          <div class="card-title">📅 本周完成率</div>
+          <div class="stat-ring" id="stat-week" style="--pct:0"><span>0%</span></div>
+          <div class="muted-line" id="stat-week-detail" style="text-align:center"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">📖 生词本</div>
+          <div id="stat-vocab" class="card-body"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">💡 灵感采用率</div>
+          <div class="stat-ring" id="stat-ideas" style="--pct:0"><span>0%</span></div>
+          <div class="muted-line" id="stat-ideas-detail" style="text-align:center"></div>
         </div>
       </div>
     </section>

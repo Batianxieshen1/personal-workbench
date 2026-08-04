@@ -297,6 +297,24 @@ body {
 }
 .guide-nav-text { font-size: 13.5px; line-height: 1.7; color: var(--ink); }
 
+/* 统计环 */
+.stat-ring {
+  width: 120px; height: 120px;
+  margin: 6px auto 12px;
+  border-radius: 50%;
+  background: conic-gradient(var(--accent) calc(var(--pct) * 1%), var(--accent-soft) 0);
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.stat-ring::before {
+  content: ""; position: absolute; inset: 12px;
+  background: var(--card); border-radius: 50%;
+}
+.stat-ring span {
+  position: relative; z-index: 1;
+  font-size: 20px; font-weight: 700; color: var(--accent-ink);
+}
+
 /* 响应式：窄屏时侧边栏收窄 */
 @media (max-width: 760px) {
   .sidebar { width: 64px; padding: 16px 8px; }

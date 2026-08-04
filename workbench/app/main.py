@@ -20,6 +20,7 @@ from . import obsidian as obsidian_mod
 from . import plan as plan_mod
 from . import progress as progress_mod
 from . import reviews as reviews_mod
+from . import stats as stats_mod
 from . import tools as tools_mod
 from . import vocab as vocab_mod
 from . import weather as weather_mod
@@ -425,6 +426,12 @@ def api_export():
         media_type="application/zip",
         headers={"Content-Disposition": f"attachment; filename=workbench-data-{dt.date.today().isoformat()}.zip"},
     )
+
+
+# ── 统计 ───────────────────────────────────────────────────
+@app.get("/api/stats")
+def api_stats():
+    return stats_mod.build_stats()
 
 
 # ── 今日行动指南 ──────────────────────────────────────────
