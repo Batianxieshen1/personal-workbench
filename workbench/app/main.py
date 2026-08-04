@@ -432,6 +432,18 @@ def api_guide():
     return guide_mod.build_guide()
 
 
+@app.get("/api/guide/nav")
+def api_guide_nav():
+    """AI 晨间导航（当天缓存）。"""
+    return guide_mod.morning_nav()
+
+
+@app.get("/api/ideas/best")
+def api_best_idea():
+    """AI 挑今日最佳灵感（无灵感/失败返回 null）。"""
+    return guide_mod.best_idea_today()
+
+
 # ── 首页聚合 ───────────────────────────────────────────────
 @app.get("/api/overview")
 def api_overview():

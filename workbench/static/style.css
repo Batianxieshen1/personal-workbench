@@ -280,6 +280,14 @@ body {
 }
 .guide-dot { flex-shrink: 0; }
 .guide-text { flex: 1; }
+.guide-nav {
+  background: var(--bg);
+  border: 1px dashed var(--accent);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+}
+.guide-nav-text { font-size: 13.5px; line-height: 1.7; color: var(--ink); }
 
 /* 响应式：窄屏时侧边栏收窄 */
 @media (max-width: 760px) {

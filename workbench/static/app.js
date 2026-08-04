@@ -40,10 +40,27 @@ function loadHome() {
   loadWeather();
   loadHomeCards();
   loadGuide();
+  loadGuideNav();
 }
 
 // ── 今日行动指南 ──
 const GUIDE_DOT = { 1: "🔴", 2: "🔴", 3: "🟡", 4: "🟡", 5: "🟢" };
+
+// AI 晨间导航（独立加载，失败只隐藏该块）
+async function loadGuideNav() {
+  const el = document.getElementById("guide-nav");
+  el.innerHTML = '<div class="muted-line">🤖 正在生成今日导航…</div>';
+  try {
+    const nav = await api("/api/guide/nav");
+    if (nav.error) {
+      el.innerHTML = "";
+      return;
+    }
+    el.innerHTML = `<div class="guide-nav-text">🤖 ${escapeHtml(nav.text)}</div>`;
+  } catch {
+    el.innerHTML = "";
+  }
+}
 
 async function loadGuide() {
   const listEl = document.getElementById("guide-list");
@@ -615,8 +632,24 @@ document.getElementById("vocab-list").addEventListener("click", async (e) => {
   loadVocabDue();
 });
 
+// AI 挑今日最佳灵感
+async function loadBestIdea() {
+  const el = document.getElementById("ideas-best");
+  try {
+    const best = await api("/api/ideas/best");
+    if (!best) {
+      el.innerHTML = "";
+      return;
+    }
+    el.innerHTML = `<div class="guide-nav-text">⭐ 今日推荐：${escapeHtml(best.text)}<br><span class="muted-line">理由：${escapeHtml(best.reason)}</span></div>`;
+  } catch {
+    el.innerHTML = "";
+  }
+}
+
 // ── 灵感页 ──
 async function loadIdeasPage() {
+  loadBestIdea();
   try {
     const all = await api("/api/ideas");
     const today = new Date().toISOString().slice(0, 10);
