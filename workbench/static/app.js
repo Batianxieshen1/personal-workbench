@@ -553,7 +553,8 @@ async function loadVocabDue() {
         <li class="vocab-item">
           <span class="vocab-word">${escapeHtml(w.word)}</span>
           <span class="vocab-meaning">${escapeHtml(w.meaning)}</span>
-          <button class="btn-small" data-review="${w.id}">打卡</button>
+          <button class="btn-small" data-review="${w.id}" data-known="true" title="认识，推进下一轮">✓ 认识</button>
+          <button class="btn-small ghost" data-review="${w.id}" data-known="false" title="不认识，重新开始">↺ 不认识</button>
         </li>`).join("")
       : '<li class="vocab-empty">今天没有到期的单词 🎉</li>';
   } catch {
@@ -594,7 +595,10 @@ document.getElementById("vocab-due-list").addEventListener("click", async (e) =>
   const btn = e.target.closest("[data-review]");
   if (!btn) return;
   try {
-    await api(`/api/vocab/${btn.dataset.review}/review`, { method: "POST" });
+    await api(`/api/vocab/${btn.dataset.review}/review`, {
+      method: "POST",
+      body: JSON.stringify({ known: btn.dataset.known === "true" }),
+    });
   } catch { /* 同上 */ }
   loadVocabDue();
   loadVocab();

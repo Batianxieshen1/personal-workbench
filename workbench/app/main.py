@@ -235,9 +235,12 @@ def api_update_vocab(word_id: str, body: VocabPatch):
 
 
 @app.post("/api/vocab/{word_id}/review")
-def api_review_vocab(word_id: str):
+def api_review_vocab(word_id: str, body: dict | None = None):
+    known = True
+    if body and isinstance(body.get("known"), bool):
+        known = body["known"]
     try:
-        return vocab_mod.review(word_id)
+        return vocab_mod.review(word_id, known=known)
     except KeyError:
         raise HTTPException(404, f"生词不存在：{word_id}")
 

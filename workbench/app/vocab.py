@@ -74,12 +74,16 @@ def update_meaning(word_id: str, meaning: str) -> dict:
     raise KeyError(word_id)
 
 
-def review(word_id: str) -> dict:
-    """复习打卡：stage +1，按新 stage 排下一次复习。"""
+def review(word_id: str, known: bool = True) -> dict:
+    """复习打卡。
+
+    known=True：认识，stage +1，按新 stage 排下一次复习
+    known=False：不认识，stage 重置回 0（重新走一遍间隔）——真正的艾宾浩斯
+    """
     data = _data()
     for w in data["words"]:
         if w["id"] == word_id:
-            w["stage"] += 1
+            w["stage"] = w["stage"] + 1 if known else 0
             w["next"] = _next_date(w["stage"], _today())
             _save(data)
             return w

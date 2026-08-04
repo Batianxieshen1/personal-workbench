@@ -74,3 +74,16 @@ def test_missing_word_raises(tmp_path, monkeypatch):
         assert False, "应当抛出 KeyError"
     except KeyError:
         pass
+
+
+def test_review_not_known_resets_stage(tmp_path, monkeypatch):
+    """复习时说"不认识"→ 阶段重置回 0，从头再来（真正的艾宾浩斯）。"""
+    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
+    w = vocab.add_word("abandon", "v. 放弃")
+    for _ in range(3):
+        vocab.review(w["id"], known=True)
+    assert vocab.list_words()[0]["stage"] == 3
+    vocab.review(w["id"], known=False)
+    w2 = vocab.list_words()[0]
+    assert w2["stage"] == 0
+    assert w2["next"] == (dt.date.today() + dt.timedelta(days=1)).isoformat()
