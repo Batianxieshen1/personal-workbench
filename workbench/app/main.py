@@ -12,6 +12,7 @@ from pydantic import BaseModel
 
 from . import config as config_mod
 from . import deepseek
+from . import guide as guide_mod
 from . import ideas as ideas_mod
 from . import ielts as ielts_mod
 from . import links as links_mod
@@ -420,6 +421,12 @@ def api_export():
         media_type="application/zip",
         headers={"Content-Disposition": f"attachment; filename=workbench-data-{dt.date.today().isoformat()}.zip"},
     )
+
+
+# ── 今日行动指南 ──────────────────────────────────────────
+@app.get("/api/guide")
+def api_guide():
+    return guide_mod.build_guide()
 
 
 # ── 首页聚合 ───────────────────────────────────────────────

@@ -259,6 +259,28 @@ body {
   color: var(--accent-ink); padding: 6px 0;
 }
 
+/* 今日行动指南 */
+.guide-card {
+  background: var(--accent-soft);
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-bottom: 20px;
+  box-shadow: 0 3px 10px var(--shadow);
+}
+.guide-title { font-weight: 700; font-size: 15px; margin-bottom: 10px; color: var(--accent-ink); }
+.guide-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.guide-item {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 14px;
+}
+.guide-dot { flex-shrink: 0; }
+.guide-text { flex: 1; }
+
 /* 响应式：窄屏时侧边栏收窄 */
 @media (max-width: 760px) {
   .sidebar { width: 64px; padding: 16px 8px; }

@@ -39,6 +39,45 @@ function loadHome() {
   loadPlan();
   loadWeather();
   loadHomeCards();
+  loadGuide();
+}
+
+// ── 今日行动指南 ──
+const GUIDE_DOT = { 1: "🔴", 2: "🔴", 3: "🟡", 4: "🟡", 5: "🟢" };
+
+async function loadGuide() {
+  const listEl = document.getElementById("guide-list");
+  try {
+    const actions = await api("/api/guide");
+    document.getElementById("guide-count").textContent = actions.length ? `(${actions.length})` : "";
+    if (!actions.length) {
+      listEl.innerHTML = '<li class="guide-item" style="border:none">🎉 今日行动全部完成，休息吧！</li>';
+      return;
+    }
+    listEl.innerHTML = actions
+      .map((a) => `
+      <li class="guide-item">
+        <span class="guide-dot">${GUIDE_DOT[a.priority] || "🔵"}</span>
+        <span class="guide-text">${escapeHtml(a.text)}</span>
+        <button class="btn-small ghost" data-guide-page="${a.page}" data-guide-target="${a.target}">去处理 →</button>
+      </li>`)
+      .join("");
+    // 一键跳转 + 聚焦
+    listEl.querySelectorAll("[data-guide-page]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        location.hash = `#/${btn.dataset.guidePage}`;
+        setTimeout(() => {
+          const el = document.getElementById(btn.dataset.guideTarget);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+            if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") el.focus();
+          }
+        }, 300);
+      });
+    });
+  } catch {
+    listEl.innerHTML = '<li class="guide-item" style="border:none">指南加载失败</li>';
+  }
 }
 
 // 问候语 + 日期行
