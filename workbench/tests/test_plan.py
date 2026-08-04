@@ -74,3 +74,27 @@ def test_days_are_isolated(tmp_path, monkeypatch):
     assert len(plan.get_plan("2026-08-01")["items"]) == 1
     assert plan.get_plan("2026-08-01")["items"][0]["text"] == "昨天的任务"
     assert len(plan.get_plan("2026-08-02")["items"]) == 1
+
+
+def test_done_at_recorded(tmp_path, monkeypatch):
+    """勾选完成时记录完成时刻，取消时清空。"""
+    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
+    d = "2026-08-04"
+    plan.add_item(d, "记录时间")
+    iid = plan.get_plan(d)["items"][0]["id"]
+    plan.update_item(d, iid, done=True)
+    item = plan.get_plan(d)["items"][0]
+    assert item["done_at"] is not None
+    assert item["done_at"].startswith("2026-08-04")
+    plan.update_item(d, iid, done=False)
+    assert plan.get_plan(d)["items"][0]["done_at"] is None
+
+
+def test_important_flag(tmp_path, monkeypatch):
+    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
+    d = "2026-08-04"
+    plan.add_item(d, "普通任务")
+    iid = plan.get_plan(d)["items"][0]["id"]
+    plan.update_item(d, iid, important=True)
+    assert plan.get_plan(d)["items"][0]["important"] is True
+    assert plan.get_plan(d)["items"][0]["done_at"] is None

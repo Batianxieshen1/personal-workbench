@@ -39,6 +39,7 @@ class PlanItemPatch(BaseModel):
     date: str | None = None
     done: bool | None = None
     text: str | None = None
+    important: bool | None = None
 
 
 class CityIn(BaseModel):

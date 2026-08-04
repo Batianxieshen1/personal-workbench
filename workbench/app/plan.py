@@ -25,20 +25,27 @@ def add_item(d: str, text: str) -> dict:
         "id": uuid.uuid4().hex[:8],
         "text": text.strip(),
         "done": False,
+        "done_at": None,
+        "important": False,
     }
     plan["items"].append(item)
     storage.save(_file(d), plan)
     return plan
 
 
-def update_item(d: str, item_id: str, done: bool | None = None, text: str | None = None) -> dict:
+def update_item(d: str, item_id: str, done: bool | None = None, text: str | None = None,
+                important: bool | None = None) -> dict:
     plan = get_plan(d)
     for it in plan["items"]:
         if it["id"] == item_id:
             if done is not None:
                 it["done"] = done
+                # 完成时记录时刻（用于统计），取消时清空
+                it["done_at"] = dt.datetime.now().isoformat(timespec="seconds") if done else None
             if text is not None:
                 it["text"] = text.strip()
+            if important is not None:
+                it["important"] = important
             break
     else:
         raise KeyError(item_id)

@@ -143,6 +143,14 @@ body {
 }
 .plan-check.checked { background: var(--accent); color: var(--card); }
 
+.plan-star {
+  border: none; background: transparent;
+  color: var(--card-border); cursor: pointer;
+  font-size: 15px; padding: 2px 4px; border-radius: 6px; flex-shrink: 0;
+}
+.plan-star.on { color: var(--accent); }
+.plan-star:hover { color: var(--accent); }
+
 .plan-text { flex: 1; font-size: 14px; word-break: break-all; }
 
 .plan-del {

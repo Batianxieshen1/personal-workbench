@@ -259,15 +259,22 @@ function renderPlan(items) {
     listEl.innerHTML = '<li class="plan-empty">今天还没有计划，先加一项吧 ✨</li>';
     return;
   }
-  listEl.innerHTML = items
-    .map(
-      (it) => `
+  // 重要任务排前面（未完成的在前）
+  const sorted = [...items].sort((a, b) => {
+    if ((b.important || false) !== (a.important || false)) return (b.important ? 1 : 0) - (a.important ? 1 : 0);
+    return (a.done ? 1 : 0) - (b.done ? 1 : 0);
+  });
+  listEl.innerHTML = sorted
+    .map((it) => {
+      const doneAt = it.done_at ? ` · ${it.done_at.slice(11, 16)} 完成` : "";
+      return `
     <li class="plan-item ${it.done ? "done" : ""}">
       <button class="plan-check ${it.done ? "checked" : ""}" data-id="${it.id}" title="完成">✓</button>
-      <span class="plan-text">${escapeHtml(it.text)}</span>
+      <button class="plan-star ${it.important ? "on" : ""}" data-star="${it.id}" title="标记重要">★</button>
+      <span class="plan-text" data-edit="${it.id}" title="双击编辑">${escapeHtml(it.text)}${doneAt ? `<span class="muted-line" style="font-size:11px">${doneAt}</span>` : ""}</span>
       <button class="plan-del" data-id="${it.id}" title="删除">✕</button>
-    </li>`
-    )
+    </li>`;
+    })
     .join("");
 }
 
@@ -295,9 +302,19 @@ document.getElementById("plan-form").addEventListener("submit", async (e) => {
   loadPlan();
 });
 
-// 列表事件委托：勾选 / 删除 共用一个监听
-// 好处：列表增删后不用重新绑定事件，性能好且不易出 bug
+// 列表事件委托：勾选 / 删除 / 星标 / 双击编辑 共用一个监听
 document.getElementById("plan-list").addEventListener("click", async (e) => {
+  const star = e.target.closest("[data-star]");
+  if (star) {
+    try {
+      await api(`/api/plan/items/${star.dataset.star}`, {
+        method: "PATCH",
+        body: JSON.stringify({ important: !star.classList.contains("on") }),
+      });
+    } catch { /* 兜底 */ }
+    loadPlan();
+    return;
+  }
   const check = e.target.closest(".plan-check");
   const del = e.target.closest(".plan-del");
   if (!check && !del) return;
@@ -312,6 +329,22 @@ document.getElementById("plan-list").addEventListener("click", async (e) => {
       await api(`/api/plan/items/${id}`, { method: "DELETE" });
     }
   } catch { /* 同上 */ }
+  loadPlan();
+});
+
+// 双击编辑计划文字
+document.getElementById("plan-list").addEventListener("dblclick", async (e) => {
+  const span = e.target.closest("[data-edit]");
+  if (!span) return;
+  const current = span.childNodes[0]?.textContent?.trim() || "";
+  const text = prompt("修改计划内容：", current);
+  if (text === null || !text.trim()) return;
+  try {
+    await api(`/api/plan/items/${span.dataset.edit}`, {
+      method: "PATCH",
+      body: JSON.stringify({ text: text.trim() }),
+    });
+  } catch { /* 兜底 */ }
   loadPlan();
 });
 
