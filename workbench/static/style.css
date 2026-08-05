@@ -4,6 +4,7 @@
    ═══════════════════════════════════════ */
 :root {
   --bg: #f3ead9;            /* 米黄纸感背景 */
+  --bg-deep: #efe3cb;
   --card: #faf4e6;          /* 卡片底色 */
   --card-border: #ece0c8;   /* 卡片描边 */
   --ink: #5a4a2e;           /* 主文字：深木色 */
@@ -18,17 +19,46 @@
   --t-fast: 0.15s ease;
   --t: 0.25s cubic-bezier(0.25, 0.8, 0.35, 1);
   --t-bounce: 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --glass: rgba(250, 244, 230, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.45);
+  --card-highlight: rgba(255, 255, 255, 0.65);
+  --ring-track: var(--accent-soft);
+  --nav-hover: var(--accent-soft);
+  --hero-grad: linear-gradient(120deg, #b8894a 0%, #8a6d3b 60%, #6b5430 100%);
+}
+
+/* 🌙 夜间模式：暖调暗色（Linear/Notion 风） */
+body.dark {
+  --bg: #1c1712;
+  --bg-deep: #241d15;
+  --card: #2a2219;
+  --card-border: #3a2f22;
+  --ink: #e8dcc3;
+  --muted: #a08a63;
+  --accent: #d4a85c;
+  --accent-soft: #3a2f22;
+  --accent-ink: #e0b96e;
+  --danger: #e07a5f;
+  --shadow: rgba(0, 0, 0, 0.3);
+  --shadow-lift: rgba(0, 0, 0, 0.45);
+  --glass: rgba(42, 34, 25, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.06);
+  --card-highlight: rgba(255, 255, 255, 0.05);
+  --ring-track: #3a2f22;
+  --nav-hover: #352a1d;
+  --hero-grad: linear-gradient(120deg, #e0b96e 0%, #d4a85c 60%, #b8894a 100%);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  background: linear-gradient(165deg, #f6efdf 0%, #f3ead9 55%, #efe3cb 100%);
+  background: linear-gradient(165deg, var(--bg) 0%, var(--bg-deep) 100%);
   background-attachment: fixed;
   color: var(--ink);
   font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
   font-size: 15px;
   line-height: 1.6;
+  transition: background 0.4s ease, color 0.3s ease;
 }
 
 /* ═══ 全局动效基调 ═══ */
@@ -86,8 +116,10 @@ body {
 .sidebar {
   width: 210px;
   flex-shrink: 0;
-  background: var(--card);
-  border-right: 1px solid var(--card-border);
+  background: var(--glass);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  border-right: 1px solid var(--glass-border);
   padding: 20px 12px;
   display: flex;
   flex-direction: column;
@@ -96,6 +128,7 @@ body {
   top: 0;
   height: 100vh;
   overflow-y: auto;
+  transition: background 0.4s ease;
 }
 
 /* 品牌区：logo 徽章 */
@@ -186,7 +219,13 @@ body {
 
 .page-head { margin-bottom: 22px; }
 .page-head h1 { font-size: 24px; font-weight: 700; }
-.hero-title { font-size: 30px; font-weight: 800; letter-spacing: -0.01em; }
+.hero-title { font-size: 30px; font-weight: 800; letter-spacing: -0.01em;
+  background: var(--hero-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
 .page-sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
 
 /* ═══ 首页网格 ═══ */
@@ -202,7 +241,28 @@ body {
   border-radius: var(--radius);
   padding: 18px;
   box-shadow: 0 3px 10px var(--shadow);
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--t), box-shadow var(--t), border-color var(--t-fast), background 0.4s ease;
 }
+/* 卡片顶部高光线：模拟光照（iOS 卡片规范） */
+.card::before {
+  content: ""; position: absolute; top: 0; left: 8%; right: 8%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--card-highlight), transparent);
+  pointer-events: none;
+}
+/* Spotlight 光晕：柔光跟随鼠标（Linear 风） */
+.card::after {
+  content: ""; position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 0%),
+              rgba(201, 163, 95, 0.10), transparent 65%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.card:hover::after { opacity: 1; }
 /* 主卡：今日计划放大 */
 .card-main {
   grid-column: span 2;
@@ -218,10 +278,11 @@ body {
 .card-badge {
   width: 26px; height: 26px;
   border-radius: 8px;
-  background: var(--accent-soft);
+  background: linear-gradient(145deg, var(--accent), #b8894a);
   display: inline-flex; align-items: center; justify-content: center;
   font-size: 14px;
   flex-shrink: 0;
+  box-shadow: 0 2px 5px var(--shadow);
 }
 
 /* 时钟 + 天气 */
@@ -485,6 +546,34 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--accent-soft); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 * { scrollbar-width: thin; scrollbar-color: var(--accent-soft) transparent; }
+
+/* 顶部加载进度条 */
+.progress-bar {
+  position: fixed; top: 0; left: 0; z-index: 100;
+  height: 2.5px; width: 100%;
+  background: linear-gradient(90deg, var(--accent), #e0b96e);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.5s ease;
+  pointer-events: none;
+}
+.progress-bar.loading { transform: scaleX(0.85); }
+.progress-bar.done { transform: scaleX(1); transition: transform 0.15s ease; opacity: 0; transition: transform 0.15s ease, opacity 0.6s ease 0.2s; }
+
+/* 夜间模式切换按钮 */
+.theme-toggle {
+  position: absolute; top: 6px; right: 0;
+  width: 38px; height: 38px;
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  background: var(--card);
+  font-size: 17px;
+  cursor: pointer;
+  box-shadow: 0 3px 8px var(--shadow);
+  transition: transform var(--t-bounce), background 0.3s ease;
+}
+.theme-toggle:hover { transform: rotate(15deg) scale(1.08); }
+.page-head { position: relative; }
 
 /* 响应式：窄屏 → 汉堡抽屉 */
 @media (max-width: 860px) {

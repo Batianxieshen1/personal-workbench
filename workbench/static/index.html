@@ -10,6 +10,8 @@
 </head>
 <body>
 
+<div class="progress-bar" id="progress-bar"></div>
+
 <div class="layout">
   <!-- 移动端汉堡按钮 -->
   <button class="hamburger" id="hamburger" aria-label="菜单">☰</button>
@@ -56,6 +58,7 @@
       <header class="page-head">
         <h1 id="greeting" class="hero-title">你好，同学 👋</h1>
         <p class="page-sub" id="today-line"></p>
+        <button class="theme-toggle" id="theme-toggle" title="切换夜间模式">🌙</button>
       </header>
 
       <!-- 今日行动指南：打开第一眼看到 -->
@@ -297,6 +300,11 @@
           <div class="card-title"><span class="card-badge">💡</span>灵感采用率</div>
           <div class="stat-ring" id="stat-ideas" style="--pct:0"><span>0%</span></div>
           <div class="muted-line" id="stat-ideas-detail" style="text-align:center"></div>
+        </div>
+        <div class="card card-wide">
+          <div class="card-title"><span class="card-badge">📈</span>近 7 天完成趋势</div>
+          <svg id="stat-chart" viewBox="0 0 300 80" preserveAspectRatio="none" style="width:100%;height:80px"></svg>
+          <div class="muted-line" id="stat-chart-labels" style="display:flex;justify-content:space-between;margin-top:4px"></div>
         </div>
       </div>
     </section>

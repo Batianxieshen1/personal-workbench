@@ -1042,11 +1042,44 @@ async function loadStatsPage() {
     setRing(document.getElementById("stat-ideas"), s.ideas.adopt_rate * 100);
     document.getElementById("stat-ideas-detail").textContent =
       `已采用 ${s.ideas.done}/${s.ideas.total} · 收藏 ${s.ideas.kept} · 丢弃 ${s.ideas.discarded}`;
+
+    // 近 7 天完成趋势（SVG 折线）
+    renderDailyChart(s.daily || []);
   } catch {
     document.querySelectorAll("#page-stats .card-body, #page-stats .stat-ring").forEach((el) => {
       el.textContent = "加载失败";
     });
   }
+}
+
+// SVG 折线图
+function renderDailyChart(daily) {
+  const svg = document.getElementById("stat-chart");
+  const labelsEl = document.getElementById("stat-chart-labels");
+  const W = 300, H = 80, PAD = 6;
+  const max = Math.max(1, ...daily.map((d) => d.done));
+  const pts = daily.map((d, i) => {
+    const x = PAD + (i * (W - PAD * 2)) / (daily.length - 1 || 1);
+    const y = H - PAD - (d.done / max) * (H - PAD * 2);
+    return [x, y];
+  });
+  const line = pts.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
+  const area = `${line} L${W - PAD},${H - PAD} L${PAD},${H - PAD} Z`;
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#c9a35f" stop-opacity="0.35"/>
+        <stop offset="100%" stop-color="#c9a35f" stop-opacity="0.02"/>
+      </linearGradient>
+    </defs>
+    <path d="${area}" fill="url(#chartGrad)"/>
+    <path d="${line}" fill="none" stroke="#c9a35f" stroke-width="2" stroke-linecap="round"
+          stroke-dasharray="600" stroke-dashoffset="600">
+      <animate attributeName="stroke-dashoffset" from="600" to="0" dur="0.9s" fill="freeze"/>
+    </path>
+    ${pts.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.6" fill="#b8894a"/>`).join("")}
+  `;
+  labelsEl.innerHTML = daily.map((d) => `<span>${d.date}</span>`).join("");
 }
 
 // ── 工具页 ──
@@ -1331,6 +1364,56 @@ window.addEventListener("hashchange", navigate);
 applyHomeOrder();
 setupHomeDrag();
 navigate();
+
+// ── Spotlight 光晕：鼠标位置 → CSS 变量 ──
+document.addEventListener("mousemove", (e) => {
+  const card = e.target.closest(".card");
+  if (!card) return;
+  const rect = card.getBoundingClientRect();
+  card.style.setProperty("--mx", `${e.clientX - rect.left}px`);
+  card.style.setProperty("--my", `${e.clientY - rect.top}px`);
+});
+
+// ── 夜间模式（localStorage 持久化） ──
+const themeBtn = document.getElementById("theme-toggle");
+function applyTheme(dark) {
+  document.body.classList.toggle("dark", dark);
+  themeBtn.textContent = dark ? "☀️" : "🌙";
+  localStorage.setItem("workbench-dark", dark ? "1" : "0");
+}
+// 初始化：读取偏好（默认跟随系统）
+(function initTheme() {
+  const saved = localStorage.getItem("workbench-dark");
+  if (saved === null) {
+    applyTheme(window.matchMedia("(prefers-color-scheme: dark)").matches);
+  } else {
+    applyTheme(saved === "1");
+  }
+})();
+themeBtn.addEventListener("click", () => {
+  applyTheme(!document.body.classList.contains("dark"));
+});
+
+// ── 顶部加载进度条 ──
+const progressBar = document.getElementById("progress-bar");
+function startProgress() {
+  progressBar.classList.remove("done");
+  progressBar.classList.add("loading");
+}
+function finishProgress() {
+  progressBar.classList.add("done");
+  setTimeout(() => {
+    progressBar.classList.remove("loading", "done");
+    progressBar.style.opacity = "";
+  }, 900);
+}
+// 每次导航触发一次进度条
+window.addEventListener("hashchange", () => {
+  startProgress();
+  setTimeout(finishProgress, 500);
+});
+startProgress();
+setTimeout(finishProgress, 600);
 
 // ── 移动端汉堡抽屉 ──
 const sidebarEl = document.getElementById("sidebar");

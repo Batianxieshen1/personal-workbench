@@ -81,4 +81,16 @@ def build_stats(today: str | None = None) -> dict:
         "week": week_completion(monday.isoformat()),
         "vocab": vocab_stats(t),
         "ideas": idea_stats(),
+        "daily": daily_completion(today=t),
     }
+
+
+def daily_completion(days: int = 7, today: str | None = None) -> list:
+    """近 N 天每天完成计划数（供折线图）。"""
+    t = dt.date.fromisoformat(today) if today else dt.date.today()
+    done_map = {d: sum(1 for i in p["items"] if i["done"]) for d, p in _plan_days()}
+    out = []
+    for i in range(days - 1, -1, -1):
+        d = (t - dt.timedelta(days=i)).isoformat()
+        out.append({"date": d[5:], "done": done_map.get(d, 0)})
+    return out

@@ -53,3 +53,16 @@ def test_vocab_and_idea_stats(tmp_path, monkeypatch):
     i = stats.idea_stats()
     assert i["total"] == 2
     assert i["adopt_rate"] == 0.5
+
+
+def test_daily_completion(tmp_path, monkeypatch):
+    _seed_plans(tmp_path, monkeypatch, {
+        "2026-08-03": [("a", True), ("b", True)],
+        "2026-08-04": [("c", True)],
+    })
+    daily = stats.daily_completion(today="2026-08-04")
+    assert len(daily) == 7  # 近 7 天
+    assert daily[-1]["date"] == "08-04"
+    assert daily[-1]["done"] == 1
+    assert daily[-2]["done"] == 2  # 08-03
+    assert daily[0]["done"] == 0   # 更早的日期无记录
