@@ -13,7 +13,10 @@ DEFAULTS = {
     "city": "广州",
     "lat": 23.1291,
     "lon": 113.2644,
+    "language": "zh",  # 界面语言：zh / en
 }
+
+LANGUAGES = ("zh", "en")
 
 _CONFIG_FILE = "config.json"
 
@@ -46,5 +49,15 @@ def set_coords(city: str, lat: float, lon: float) -> dict:
     """手动指定坐标兜底：Open-Meteo 地理编码查不到县级小地名时用。"""
     cfg = get_config()
     cfg.update(city=city.strip(), lat=lat, lon=lon)
+    storage.save(_CONFIG_FILE, cfg)
+    return cfg
+
+
+def set_language(lang: str) -> dict:
+    """设置界面语言；非法值拒绝（不写盘）。"""
+    if lang not in LANGUAGES:
+        raise ValueError(f"不支持的语言：{lang}")
+    cfg = get_config()
+    cfg["language"] = lang
     storage.save(_CONFIG_FILE, cfg)
     return cfg

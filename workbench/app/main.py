@@ -51,6 +51,10 @@ class NicknameIn(BaseModel):
     nickname: str
 
 
+class LanguageIn(BaseModel):
+    language: str
+
+
 class IeltsPatch(BaseModel):
     target_score: float | None = None
     current_band: str | None = None
@@ -169,6 +173,14 @@ def api_set_city(body: CityIn):
 @app.patch("/api/config/nickname")
 def api_set_nickname(body: NicknameIn):
     return config_mod.set_nickname(body.nickname)
+
+
+@app.patch("/api/config/language")
+def api_set_language(body: LanguageIn):
+    try:
+        return config_mod.set_language(body.language)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
 
 
 @app.patch("/api/config/coords")

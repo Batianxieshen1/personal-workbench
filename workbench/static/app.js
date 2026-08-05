@@ -99,7 +99,8 @@ async function loadGuideNav() {
       el.innerHTML = "";
       return;
     }
-    el.innerHTML = `<div class="guide-nav-text">🤖 ${escapeHtml(nav.text)}</div>`;
+    el.innerHTML = '<div class="guide-nav-text"></div>';
+    typewriter(el.querySelector(".guide-nav-text"), nav.text);
   } catch {
     el.innerHTML = "";
   }
@@ -593,6 +594,7 @@ document.getElementById("ielts-save-btn").addEventListener("click", async () => 
     };
     await api("/api/ielts", { method: "PATCH", body: JSON.stringify(body) });
     statusEl.textContent = "✅ 已保存";
+    toast("🎯 雅思看板已保存");
     loadIeltsBoard();
     loadHomeCards();
   } catch {
@@ -652,11 +654,20 @@ async function loadVocabDue() {
     document.getElementById("vocab-due-count").textContent = due.length ? `(${due.length})` : "";
     listEl.innerHTML = due.length
       ? due.map((w) => `
-        <li class="vocab-item">
-          <span class="vocab-word">${escapeHtml(w.word)}</span>
-          <span class="vocab-meaning">${escapeHtml(w.meaning)}</span>
-          <button class="btn-small" data-review="${w.id}" data-known="true" title="认识，推进下一轮">✓ 认识</button>
-          <button class="btn-small ghost" data-review="${w.id}" data-known="false" title="不认识，重新开始">↺ 不认识</button>
+        <li class="flip-card" data-flip="${w.id}">
+          <div class="flip-inner">
+            <div class="flip-face">
+              <span class="vocab-word">${escapeHtml(w.word)}</span>
+              <span class="muted-line" style="font-size:11px">点击看释义</span>
+            </div>
+            <div class="flip-face flip-back">
+              <span>${escapeHtml(w.meaning)}</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <button class="btn-small" data-review="${w.id}" data-known="true" title="认识，推进下一轮">✓ 认识</button>
+            <button class="btn-small ghost" data-review="${w.id}" data-known="false" title="不认识，重新开始">↺ 不认识</button>
+          </div>
         </li>`).join("")
       : '<li class="vocab-empty">今天没有到期的单词 🎉</li>';
   } catch {
@@ -690,10 +701,17 @@ document.getElementById("vocab-form").addEventListener("submit", async (e) => {
   } catch { /* 兜底由 loadVocab 提示 */ }
   loadVocab();
   loadVocabDue();
+  toast("📖 生词已添加");
 });
 
 // 复习打卡 / 删除（事件委托）
 document.getElementById("vocab-due-list").addEventListener("click", async (e) => {
+  // 翻转卡片：点卡片看释义
+  const flip = e.target.closest("[data-flip]");
+  if (flip && !e.target.closest("button")) {
+    flip.classList.toggle("flipped");
+    return;
+  }
   const btn = e.target.closest("[data-review]");
   if (!btn) return;
   try {
@@ -702,6 +720,7 @@ document.getElementById("vocab-due-list").addEventListener("click", async (e) =>
       body: JSON.stringify({ known: btn.dataset.known === "true" }),
     });
   } catch { /* 同上 */ }
+  toast(btn.dataset.known === "true" ? "✓ 记住了，推进一轮" : "↺ 已重置，重新复习");
   loadVocabDue();
   loadVocab();
   loadHomeCards();
@@ -852,11 +871,15 @@ document.getElementById("ideas-today-list").addEventListener("click", async (e) 
   const el = discard || keep || adopt;
   const id = el.dataset.ideaDiscard || el.dataset.ideaKeep || el.dataset.ideaAdopt;
   const status = discard ? "discarded" : adopt ? "done" : "kept";
+  const itemEl = el.closest(".vocab-item") || el.closest(".flip-card") || el.closest("li");
+  if (itemEl) itemEl.classList.add("idea-leave");  // 先播放滑出动画
+  await new Promise((r) => setTimeout(r, 240));
   try {
     await api(`/api/ideas/${id}`, { method: "PATCH", body: JSON.stringify({ status }) });
   } catch { /* 兜底 */ }
   loadIdeasPage();
   loadHomeCards();
+  toast(status === "done" ? "⭐ 已采用，去做出内容吧" : status === "discarded" ? "🗑 已丢弃" : "🔖 已捡回");
 });
 
 // ── 复盘页 ──
@@ -957,6 +980,7 @@ document.getElementById("review-save-btn").addEventListener("click", async () =>
     });
     document.getElementById("review-date-label").textContent = "（已保存 ✅）";
     loadHomeCards();
+    toast("📝 总结已保存");
   } catch {
     document.getElementById("review-date-label").textContent = "（保存失败）";
   }
@@ -977,6 +1001,7 @@ document.getElementById("review-obsidian-btn").addEventListener("click", async (
       body: JSON.stringify({ date, summary }),
     });
     statusEl.textContent = `✅ 已写入 ${date}.md（Obsidian 里刷新即可看到）`;
+    toast("📓 已同步到 Obsidian 日记");
   } catch {
     statusEl.textContent = "❌ 同步失败";
   }
@@ -1024,7 +1049,7 @@ async function loadStatsPage() {
     const streakEl = document.getElementById("stat-streak");
     streakEl.dataset.unit = " 天";
     streakEl.style.setProperty("--pct", Math.min(100, s.streak_days * 10));
-    streakEl.querySelector("span").textContent = `${s.streak_days} 天`;
+    countUp(streakEl, s.streak_days, " 天");
 
     // 本周完成率
     setRing(document.getElementById("stat-week"), s.week.rate * 100);
@@ -1231,6 +1256,7 @@ document.getElementById("ielts-template-btn").addEventListener("click", async ()
       }
     }
     statusEl.textContent = added ? `✅ 已添加 ${added} 项到今日计划` : "这些任务今天已经有了";
+    toast(added ? `⚡ 已添加 ${added} 项雅思任务` : "这些任务今天已经有了");
   } catch {
     statusEl.textContent = "❌ 添加失败";
   }
@@ -1414,6 +1440,65 @@ window.addEventListener("hashchange", () => {
 });
 startProgress();
 setTimeout(finishProgress, 600);
+
+// ── Toast 通知横幅 ──
+function toast(text, ms = 2200) {
+  const wrap = document.getElementById("toast-wrap");
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.textContent = text;
+  wrap.appendChild(el);
+  setTimeout(() => {
+    el.classList.add("out");
+    setTimeout(() => el.remove(), 350);
+  }, ms);
+}
+
+// ── Ripple 波纹（全局委托） ──
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".btn-small");
+  if (!btn) return;
+  const rect = btn.getBoundingClientRect();
+  const d = Math.max(rect.width, rect.height);
+  const ink = document.createElement("span");
+  ink.className = "ripple-ink";
+  ink.style.width = ink.style.height = `${d}px`;
+  ink.style.left = `${e.clientX - rect.left - d / 2}px`;
+  ink.style.top = `${e.clientY - rect.top - d / 2}px`;
+  btn.appendChild(ink);
+  setTimeout(() => ink.remove(), 600);
+});
+
+// ── 数字 count-up（统计页） ──
+function countUp(el, target, unit = "", dur = 900) {
+  const start = performance.now();
+  const from = 0;
+  function frame(now) {
+    const p = Math.min(1, (now - start) / dur);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.querySelector("span").textContent = `${Math.round(from + (target - from) * eased)}${unit}`;
+    if (p < 1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+// ── AI 导航打字机效果 ──
+function typewriter(el, text, speed = 22) {
+  el.classList.add("typing");
+  let i = 0;
+  const full = text;
+  el.textContent = "";
+  function step() {
+    i += 1;
+    el.textContent = full.slice(0, i);
+    if (i < full.length) {
+      setTimeout(step, speed);
+    } else {
+      el.classList.remove("typing");
+    }
+  }
+  step();
+}
 
 // ── 移动端汉堡抽屉 ──
 const sidebarEl = document.getElementById("sidebar");

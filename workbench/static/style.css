@@ -436,9 +436,76 @@ body {
   border: 1px solid var(--accent); background: var(--accent);
   color: var(--card); border-radius: 9px; padding: 8px 16px;
   font-size: 13.5px; font-weight: 600; cursor: pointer;
+  position: relative; overflow: hidden;
 }
-.btn-small:hover { opacity: 0.88; }
+.btn-small:hover { opacity: 0.88; transform: translateY(-1px); box-shadow: 0 3px 8px var(--shadow-lift); }
+.btn-small:active { transform: translateY(0); }
 .btn-small.ghost { background: transparent; color: var(--accent-ink); border-color: var(--accent-soft); }
+
+/* Ripple 波纹：点击按钮金色涟漪扩散 */
+.ripple-ink {
+  position: absolute; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.45);
+  transform: scale(0);
+  animation: rippleAnim 0.55s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes rippleAnim {
+  to { transform: scale(3.2); opacity: 0; }
+}
+
+/* 生词翻转卡片：复习队列 3D 翻转 */
+.flip-card { perspective: 600px; }
+.flip-inner {
+  position: relative; width: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.5s var(--t);
+}
+.flip-card.flipped .flip-inner { transform: rotateY(180deg); }
+.flip-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 9px; background: var(--bg);
+}
+.flip-back {
+  position: absolute; inset: 0;
+  transform: rotateY(180deg);
+  background: var(--accent-soft);
+  justify-content: center; font-weight: 600;
+  color: var(--accent-ink);
+}
+
+/* Toast 通知横幅 */
+.toast-wrap {
+  position: fixed; right: 18px; bottom: 18px; z-index: 90;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.toast {
+  background: var(--ink); color: var(--bg);
+  padding: 10px 18px; border-radius: 12px;
+  font-size: 13.5px;
+  box-shadow: 0 6px 18px var(--shadow-lift);
+  animation: toastIn 0.3s var(--t-bounce);
+  max-width: 300px;
+}
+.toast.out { animation: toastOut 0.3s ease forwards; }
+@keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: none; } }
+@keyframes toastOut { to { opacity: 0; transform: translateX(40px); } }
+
+/* 灵感条目操作动画 */
+.idea-leave { animation: ideaOut 0.28s ease forwards; }
+@keyframes ideaOut { to { opacity: 0; transform: scale(0.85) translateX(24px); } }
+.idea-enter { animation: ideaIn 0.35s var(--t-bounce); }
+@keyframes ideaIn { from { opacity: 0; transform: translateY(8px) scale(0.96); } to { opacity: 1; } }
+
+/* AI 导航打字机光标 */
+.guide-nav-text.typing::after {
+  content: "▌"; margin-left: 2px;
+  animation: blink 0.8s step-end infinite;
+  color: var(--accent);
+}
+@keyframes blink { 50% { opacity: 0; } }
 
 /* 复盘输入区 */
 .review-textarea {

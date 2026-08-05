@@ -1,4 +1,6 @@
 """配置模块测试：默认值、改昵称、改城市（地理编码被 mock）。"""
+import pytest
+
 from app import config, storage
 
 
@@ -36,3 +38,13 @@ def test_set_city_not_found_raises(tmp_path, monkeypatch):
         pass
     # 失败的修改不能污染已存配置
     assert config.get_config()["city"] != "不存在的城市"
+
+
+def test_language_default_and_set(tmp_path, monkeypatch):
+    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
+    assert config.get_config()["language"] == "zh"
+    config.set_language("en")
+    assert config.get_config()["language"] == "en"
+    with pytest.raises(ValueError):  # 非法值拒绝且不写盘
+        config.set_language("fr")
+    assert config.get_config()["language"] == "en"
