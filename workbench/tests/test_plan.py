@@ -85,7 +85,7 @@ def test_done_at_recorded(tmp_path, monkeypatch):
     plan.update_item(d, iid, done=True)
     item = plan.get_plan(d)["items"][0]
     assert item["done_at"] is not None
-    assert item["done_at"].startswith("2026-08-04")
+    assert "T" in item["done_at"]  # ISO 时间格式（日期部分不硬编码，避免跨天）
     plan.update_item(d, iid, done=False)
     assert plan.get_plan(d)["items"][0]["done_at"] is None
 
