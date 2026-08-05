@@ -177,7 +177,7 @@ async function loadHomeLinks() {
     body.innerHTML = links.length
       ? links.slice(0, 5).map((l) => `
         <div class="home-idea"><a class="nav-link" href="${escapeHtml(l.url)}" target="_blank" rel="noopener">🔗 ${escapeHtml(l.title)}</a>${l.note ? `<span class="muted-line"> — ${escapeHtml(l.note)}</span>` : ""}</div>`).join("")
-      : '<div class="placeholder">还没有收藏，去工具页添加</div>';
+      : '<div class="placeholder">还没有收藏<br><a class="nav-link" href="#/tools">去工具页添加 →</a></div>';
   } catch {
     body.innerHTML = '<div class="placeholder">收藏加载失败</div>';
   }
@@ -308,7 +308,7 @@ function renderPlan(items) {
   const listEl = document.getElementById("plan-list");
   document.getElementById("plan-count").textContent = items.length ? `(${items.length})` : "";
   if (!items.length) {
-    listEl.innerHTML = '<li class="plan-empty">今天还没有计划，先加一项吧 ✨</li>';
+    listEl.innerHTML = '<li class="plan-empty">✨ 今天还没有计划，先加一项吧</li>';
     return;
   }
   // 重要任务排前面（未完成的在前）
@@ -1331,3 +1331,23 @@ window.addEventListener("hashchange", navigate);
 applyHomeOrder();
 setupHomeDrag();
 navigate();
+
+// ── 移动端汉堡抽屉 ──
+const sidebarEl = document.getElementById("sidebar");
+const overlayEl = document.getElementById("sidebar-overlay");
+const hamburgerEl = document.getElementById("hamburger");
+
+function closeSidebar() {
+  sidebarEl.classList.remove("open");
+  overlayEl.classList.remove("show");
+}
+
+hamburgerEl.addEventListener("click", () => {
+  const open = sidebarEl.classList.toggle("open");
+  overlayEl.classList.toggle("show", open);
+});
+overlayEl.addEventListener("click", closeSidebar);
+// 切页后自动收起抽屉
+document.querySelectorAll(".nav-item").forEach((item) => {
+  item.addEventListener("click", closeSidebar);
+});
