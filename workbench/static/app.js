@@ -4,6 +4,73 @@
    设计原则：每个卡片独立加载、独立容错，坏一个不影响整页
    ═══════════════════════════════════════ */
 
+// ── i18n 中英双语 ──
+const I18N = {
+  zh: {
+    "brand": "个人工作台",
+    "nav.group.today": "🗓 今日",
+    "nav.group.study": "📖 学习",
+    "nav.group.record": "✨ 记录",
+    "nav.group.sys": "⚙️ 系统",
+    "nav.home": "首页", "nav.study": "学习", "nav.ielts": "雅思", "nav.ideas": "灵感",
+    "nav.review": "复盘", "nav.stats": "统计", "nav.tools": "工具",
+    "page.study": "📚 学习", "page.ielts": "🎯 雅思", "page.ideas": "💡 灵感",
+    "page.review": "📝 复盘", "page.stats": "📊 统计", "page.tools": "🛠 工具",
+    "guide.title": "今日行动",
+    "card.plan": "今日计划", "card.progress": "学习进度", "card.ielts": "雅思速览",
+    "card.ideas": "今日灵感", "card.review": "内容复盘", "card.links": "资源收藏",
+    "card.subject": "科目", "card.stages": "当前阶段", "card.plan-info": "备考计划",
+    "card.pomodoro": "番茄钟", "card.quiz": "测验记录", "card.board": "进度看板",
+    "card.due": "今日复习队列", "card.template": "雅思任务模板", "card.vocab": "生词本",
+    "card.batch": "今日批次", "card.manual": "手动添加", "card.summary": "每日总结",
+    "card.weekly": "周报", "card.content": "内容复盘", "card.streak": "连续学习",
+    "card.week-rate": "本周完成率", "card.adopt": "灵感采用率", "card.trend": "近 7 天完成趋势",
+    "card.douyin": "抖音视频提取", "card.obsidian": "Obsidian 联动",
+    "card.settings": "设置", "card.data": "数据",
+  },
+  en: {
+    "brand": "Workbench",
+    "nav.group.today": "🗓 TODAY",
+    "nav.group.study": "📖 STUDY",
+    "nav.group.record": "✨ RECORDS",
+    "nav.group.sys": "⚙️ SYSTEM",
+    "nav.home": "Home", "nav.study": "Study", "nav.ielts": "IELTS", "nav.ideas": "Ideas",
+    "nav.review": "Review", "nav.stats": "Stats", "nav.tools": "Tools",
+    "page.study": "📚 Study", "page.ielts": "🎯 IELTS", "page.ideas": "💡 Ideas",
+    "page.review": "📝 Review", "page.stats": "📊 Stats", "page.tools": "🛠 Tools",
+    "guide.title": "Today's Plan",
+    "card.plan": "Today's Plan", "card.progress": "Study Progress", "card.ielts": "IELTS",
+    "card.ideas": "Today's Ideas", "card.review": "Review", "card.links": "Bookmarks",
+    "card.subject": "Subject", "card.stages": "Milestones", "card.plan-info": "Study Plan",
+    "card.pomodoro": "Pomodoro", "card.quiz": "Quiz Log", "card.board": "Dashboard",
+    "card.due": "Review Queue", "card.template": "IELTS Tasks", "card.vocab": "Vocabulary",
+    "card.batch": "Today's Batch", "card.manual": "Add Manually", "card.summary": "Daily Summary",
+    "card.weekly": "Weekly Report", "card.content": "Content Review", "card.streak": "Streak",
+    "card.week-rate": "Week Rate", "card.adopt": "Adoption Rate", "card.trend": "7-Day Trend",
+    "card.douyin": "Douyin Extract", "card.obsidian": "Obsidian",
+    "card.settings": "Settings", "card.data": "Data",
+  },
+};
+
+let LANG = "zh";
+function t(key) {
+  return (I18N[LANG] && I18N[LANG][key]) || I18N.zh[key] || key;
+}
+function applyI18n() {
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    el.textContent = t(el.dataset.i18n);
+  });
+}
+// 启动时从后端读取语言偏好
+async function initLanguage() {
+  try {
+    const cfg = await api("/api/config");
+    LANG = cfg.language === "en" ? "en" : "zh";
+  } catch { /* 默认中文 */ }
+  applyI18n();
+  document.dispatchEvent(new CustomEvent("lang-ready"));
+}
+
 // ── 基础请求封装 ──
 async function api(path, options = {}) {
   const resp = await fetch(path, {
@@ -1117,9 +1184,24 @@ async function loadToolsPage() {
     document.getElementById("set-city").value = cfg.city;
     document.getElementById("set-lat").value = cfg.lat;
     document.getElementById("set-lon").value = cfg.lon;
+    document.getElementById("set-language").value = cfg.language || "zh";
     document.getElementById("set-status").textContent = `当前：${cfg.city}（${cfg.lat}, ${cfg.lon}）`;
   } catch { /* 表单保持空 */ }
 }
+
+// 语言切换：保存后刷新页面（让所有文案按新语言重新渲染）
+document.getElementById("set-language").addEventListener("change", async (e) => {
+  const lang = e.target.value;
+  try {
+    await api("/api/config/language", { method: "PATCH", body: JSON.stringify({ language: lang }) });
+    LANG = lang;
+    applyI18n();
+    toast(lang === "en" ? "🌐 Language switched to English" : "🌐 已切换为中文");
+    setTimeout(() => location.reload(), 900);
+  } catch {
+    toast("❌ 切换失败");
+  }
+});
 
 // 抖音提取：提交 → 轮询任务 → 渲染结果
 document.getElementById("douyin-form").addEventListener("submit", async (e) => {
@@ -1389,6 +1471,7 @@ document.getElementById("links-list").addEventListener("click", async (e) => {
 window.addEventListener("hashchange", navigate);
 applyHomeOrder();
 setupHomeDrag();
+initLanguage();
 navigate();
 
 // ── Spotlight 光晕：鼠标位置 → CSS 变量 ──

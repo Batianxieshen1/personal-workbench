@@ -22,30 +22,30 @@
   <nav class="sidebar" id="sidebar">
     <div class="brand">
       <span class="brand-logo">🏠</span>
-      <span class="brand-name">个人工作台</span>
+      <span class="brand-name" data-i18n="brand">个人工作台</span>
     </div>
 
     <div class="nav-group">
-      <div class="nav-group-title">🗓 今日</div>
-      <a class="nav-item active" data-page="home" href="#/home"><span class="nav-ico">🏠</span>首页</a>
+      <div class="nav-group-title" data-i18n="nav.group.today">🗓 今日</div>
+      <a class="nav-item active" data-page="home" href="#/home"><span class="nav-ico">🏠</span><span data-i18n="nav.home">首页</span></a>
     </div>
 
     <div class="nav-group">
-      <div class="nav-group-title">📖 学习</div>
-      <a class="nav-item" data-page="study" href="#/study"><span class="nav-ico">📚</span>学习</a>
-      <a class="nav-item" data-page="ielts" href="#/ielts"><span class="nav-ico">🎯</span>雅思</a>
+      <div class="nav-group-title" data-i18n="nav.group.study">📖 学习</div>
+      <a class="nav-item" data-page="study" href="#/study"><span class="nav-ico">📚</span><span data-i18n="nav.study">学习</span></a>
+      <a class="nav-item" data-page="ielts" href="#/ielts"><span class="nav-ico">🎯</span><span data-i18n="nav.ielts">雅思</span></a>
     </div>
 
     <div class="nav-group">
-      <div class="nav-group-title">✨ 记录</div>
-      <a class="nav-item" data-page="ideas" href="#/ideas"><span class="nav-ico">💡</span>灵感</a>
-      <a class="nav-item" data-page="review" href="#/review"><span class="nav-ico">📝</span>复盘</a>
-      <a class="nav-item" data-page="stats" href="#/stats"><span class="nav-ico">📊</span>统计</a>
+      <div class="nav-group-title" data-i18n="nav.group.record">✨ 记录</div>
+      <a class="nav-item" data-page="ideas" href="#/ideas"><span class="nav-ico">💡</span><span data-i18n="nav.ideas">灵感</span></a>
+      <a class="nav-item" data-page="review" href="#/review"><span class="nav-ico">📝</span><span data-i18n="nav.review">复盘</span></a>
+      <a class="nav-item" data-page="stats" href="#/stats"><span class="nav-ico">📊</span><span data-i18n="nav.stats">统计</span></a>
     </div>
 
     <div class="nav-group">
-      <div class="nav-group-title">⚙️ 系统</div>
-      <a class="nav-item" data-page="tools" href="#/tools"><span class="nav-ico">🛠</span>工具</a>
+      <div class="nav-group-title" data-i18n="nav.group.sys">⚙️ 系统</div>
+      <a class="nav-item" data-page="tools" href="#/tools"><span class="nav-ico">🛠</span><span data-i18n="nav.tools">工具</span></a>
     </div>
 
     <div class="sidebar-footer" id="sidebar-nickname">同学</div>
@@ -64,7 +64,7 @@
 
       <!-- 今日行动指南：打开第一眼看到 -->
       <div class="guide-card" id="guide-card">
-        <div class="guide-title">🗺 今日行动 <span class="plan-count" id="guide-count"></span>
+        <div class="guide-title" data-i18n="guide.title">🗺 今日行动 <span class="plan-count" id="guide-count"></span>
           <button class="btn-small ghost" id="notify-btn" style="padding:2px 10px;font-size:12px;float:right">🔔 开启提醒</button>
         </div>
         <div class="guide-nav" id="guide-nav"></div>
@@ -81,7 +81,7 @@
 
         <!-- 今日计划（主卡） -->
         <div class="card card-main card-plan">
-          <div class="card-title"><span class="card-badge">📋</span>今日计划 <span class="plan-count" id="plan-count"></span></div>
+          <div class="card-title"><span class="card-badge">📋</span><span data-i18n="card.plan">今日计划</span> <span class="plan-count" id="plan-count"></span></div>
           <form class="plan-form" id="plan-form">
             <input class="plan-input" id="plan-input" type="text" placeholder="添加一项计划，回车确认" autocomplete="off">
           </form>
@@ -90,31 +90,31 @@
 
         <!-- 学习进度 -->
         <div class="card" id="home-progress">
-          <div class="card-title"><span class="card-badge">📚</span>学习进度</div>
+          <div class="card-title"><span class="card-badge">📚</span><span data-i18n="card.progress">学习进度</span></div>
           <div id="home-progress-body" class="card-body">加载中…</div>
         </div>
 
         <!-- 雅思速览 -->
         <div class="card" id="home-ielts">
-          <div class="card-title"><span class="card-badge">🎯</span>雅思速览</div>
+          <div class="card-title"><span class="card-badge">🎯</span><span data-i18n="card.ielts">雅思速览</span></div>
           <div id="home-ielts-body" class="card-body">加载中…</div>
         </div>
 
         <!-- 今日灵感 -->
         <div class="card" id="home-ideas">
-          <div class="card-title"><span class="card-badge">💡</span>今日灵感 <span class="plan-count" id="home-ideas-count"></span></div>
+          <div class="card-title"><span class="card-badge">💡</span><span data-i18n="card.ideas">今日灵感</span> <span class="plan-count" id="home-ideas-count"></span></div>
           <div id="home-ideas-body" class="card-body">加载中…</div>
         </div>
 
         <!-- 内容复盘 -->
         <div class="card" id="home-review">
-          <div class="card-title"><span class="card-badge">📝</span>内容复盘</div>
+          <div class="card-title"><span class="card-badge">📝</span><span data-i18n="card.review">内容复盘</span></div>
           <div id="home-review-body" class="card-body">加载中…</div>
         </div>
 
         <!-- 资源收藏 -->
         <div class="card" id="home-links">
-          <div class="card-title"><span class="card-badge">🔖</span>资源收藏 <span class="plan-count" id="home-links-count"></span></div>
+          <div class="card-title"><span class="card-badge">🔖</span><span data-i18n="card.links">资源收藏</span> <span class="plan-count" id="home-links-count"></span></div>
           <div id="home-links-body" class="card-body">加载中…</div>
         </div>
       </div>
@@ -122,24 +122,24 @@
 
     <!-- ══ 其他页（占位） ══ -->
     <section class="page" id="page-study">
-      <div class="page-head"><h1>📚 学习</h1></div>
+      <div class="page-head"><h1 data-i18n="page.study">📚 学习</h1></div>
       <div class="grid">
         <div class="card card-wide">
-          <div class="card-title"><span class="card-badge">📖</span>科目</div>
+          <div class="card-title"><span class="card-badge">📖</span><span data-i18n="card.subject">科目</span></div>
           <div id="study-subject" class="big-number">加载中…</div>
           <div id="study-meta" class="muted-line"></div>
         </div>
         <div class="card">
-          <div class="card-title"><span class="card-badge">🚩</span>当前阶段</div>
+          <div class="card-title"><span class="card-badge">🚩</span><span data-i18n="card.stages">当前阶段</span></div>
           <ul class="stage-list" id="study-stages"></ul>
           <div class="muted-line" style="margin-top:8px">点击勾选会写回 study_progress.md</div>
         </div>
         <div class="card">
-          <div class="card-title"><span class="card-badge">🗺</span>备考计划</div>
+          <div class="card-title"><span class="card-badge">🗺</span><span data-i18n="card.plan-info">备考计划</span></div>
           <ul class="stage-list" id="study-plan-stages"></ul>
         </div>
         <div class="card">
-          <div class="card-title"><span class="card-badge">🍅</span>番茄钟</div>
+          <div class="card-title"><span class="card-badge">🍅</span><span data-i18n="card.pomodoro">番茄钟</span></div>
           <div class="pomodoro-time" id="pomodoro-time">25:00</div>
           <div style="display:flex;gap:8px;justify-content:center;margin-top:10px">
             <button class="btn-small" id="pomodoro-start">▶ 开始</button>
@@ -148,16 +148,16 @@
           <div id="pomodoro-status" class="muted-line" style="text-align:center;margin-top:8px"></div>
         </div>
         <div class="card">
-          <div class="card-title"><span class="card-badge">📝</span>测验记录</div>
+          <div class="card-title"><span class="card-badge">📝</span><span data-i18n="card.quiz">测验记录</span></div>
           <table class="mini-table" id="study-chapters"></table>
         </div>
       </div>
     </section>
     <section class="page" id="page-ielts">
-      <div class="page-head"><h1>🎯 雅思</h1></div>
+      <div class="page-head"><h1 data-i18n="page.ielts">🎯 雅思</h1></div>
       <div class="grid">
         <div class="card" id="ielts-board">
-          <div class="card-title"><span class="card-badge">🎯</span>进度看板</div>
+          <div class="card-title"><span class="card-badge">🎯</span><span data-i18n="card.board">进度看板</span></div>
           <div id="ielts-board-body">加载中…</div>
           <details class="board-edit">
             <summary>✏️ 编辑看板</summary>
@@ -182,18 +182,18 @@
           </details>
         </div>
         <div class="card">
-          <div class="card-title"><span class="card-badge">⏰</span>今日复习队列 <span class="plan-count" id="vocab-due-count"></span></div>
+          <div class="card-title"><span class="card-badge">⏰</span><span data-i18n="card.due">今日复习队列</span> <span class="plan-count" id="vocab-due-count"></span></div>
           <div class="sub-hint">艾宾浩斯：1 / 3 / 7 / 14 / 30 天</div>
           <ul class="vocab-list" id="vocab-due-list"></ul>
         </div>
         <div class="card">
-          <div class="card-title"><span class="card-badge">⚡</span>雅思任务模板</div>
+          <div class="card-title"><span class="card-badge">⚡</span><span data-i18n="card.template">雅思任务模板</span></div>
           <div class="sub-hint">一键把常用任务加进今日计划</div>
           <button class="btn-small" id="ielts-template-btn" style="width:100%">📋 添加今日雅思任务</button>
           <div id="ielts-template-status" class="muted-line" style="margin-top:8px"></div>
         </div>
         <div class="card card-wide">
-          <div class="card-title"><span class="card-badge">📖</span>生词本 <span class="plan-count" id="vocab-stats"></span></div>
+          <div class="card-title"><span class="card-badge">📖</span><span data-i18n="card.vocab">生词本</span> <span class="plan-count" id="vocab-stats"></span></div>
           <form class="plan-form" id="vocab-form">
             <input class="plan-input" id="vocab-word" type="text" placeholder="单词" autocomplete="off">
             <input class="plan-input" id="vocab-meaning" type="text" placeholder="释义，如：v. 放弃" autocomplete="off">
@@ -210,10 +210,10 @@
       </div>
     </section>
     <section class="page" id="page-ideas">
-      <div class="page-head"><h1>💡 灵感</h1></div>
+      <div class="page-head"><h1 data-i18n="page.ideas">💡 灵感</h1></div>
       <div class="grid">
         <div class="card card-wide">
-          <div class="card-title"><span class="card-badge">🤖</span>今日批次 <span class="plan-count" id="ideas-today-count"></span></div>
+          <div class="card-title"><span class="card-badge">🤖</span><span data-i18n="card.batch">今日批次</span> <span class="plan-count" id="ideas-today-count"></span></div>
           <div class="sub-hint">AI 每天自动生成，可收藏 / 丢弃 / 换一批</div>
           <div id="ideas-best" class="guide-nav" style="margin-bottom:8px"></div>
           <div id="ideas-ai-status" class="muted-line" style="margin-bottom:8px"></div>
@@ -224,7 +224,7 @@
           </div>
         </div>
         <div class="card card-wide">
-          <div class="card-title"><span class="card-badge">✍️</span>手动添加</div>
+          <div class="card-title"><span class="card-badge">✍️</span><span data-i18n="card.manual">手动添加</span></div>
           <form class="plan-form" id="ideas-form">
             <input class="plan-input" id="ideas-text" type="text" placeholder="随手记下一个点子…" autocomplete="off">
             <button class="btn-small" type="submit">添加</button>
@@ -248,10 +248,10 @@
       </div>
     </section>
     <section class="page" id="page-review">
-      <div class="page-head"><h1>📝 复盘</h1></div>
+      <div class="page-head"><h1 data-i18n="page.review">📝 复盘</h1></div>
       <div class="grid">
         <div class="card card-wide">
-          <div class="card-title"><span class="card-badge">📔</span>每日总结 <span class="plan-count" id="review-date-label"></span></div>
+          <div class="card-title"><span class="card-badge">📔</span><span data-i18n="card.summary">每日总结</span> <span class="plan-count" id="review-date-label"></span></div>
           <div class="sub-hint" style="display:flex;align-items:center;gap:8px">
             <input type="date" id="review-date-picker" class="plan-input" style="max-width:160px;padding:4px 8px">
             <span>选择日期回看</span>
@@ -265,7 +265,7 @@
           <div id="review-obsidian-status" class="muted-line" style="margin-top:6px"></div>
         </div>
         <div class="card card-wide">
-          <div class="card-title"><span class="card-badge">📊</span>周报 <span class="plan-count" id="weekly-label"></span></div>
+          <div class="card-title"><span class="card-badge">📊</span><span data-i18n="card.weekly">周报</span> <span class="plan-count" id="weekly-label"></span></div>
           <div class="sub-hint">聚合本周计划与总结，AI 生成周报</div>
           <textarea class="review-textarea" id="weekly-summary" rows="5" placeholder="本周还没生成周报，点击 AI 生成…"></textarea>
           <div style="display:flex;gap:8px;margin-top:10px">
@@ -274,48 +274,48 @@
           </div>
         </div>
         <div class="card card-wide">
-          <div class="card-title"><span class="card-badge">🎬</span>内容复盘</div>
+          <div class="card-title"><span class="card-badge">🎬</span><span data-i18n="card.content">内容复盘</span></div>
           <div class="sub-hint">灵感 → 做成内容 → 效果追踪</div>
           <div id="content-review-body" class="card-body">加载中…</div>
         </div>
       </div>
     </section>
     <section class="page" id="page-stats">
-      <div class="page-head"><h1>📊 统计</h1></div>
+      <div class="page-head"><h1 data-i18n="page.stats">📊 统计</h1></div>
       <div class="grid">
         <div class="card">
-          <div class="card-title"><span class="card-badge">🔥</span>连续学习</div>
+          <div class="card-title"><span class="card-badge">🔥</span><span data-i18n="card.streak">连续学习</span></div>
           <div class="stat-ring" id="stat-streak" style="--pct:0"><span>0 天</span></div>
           <div class="muted-line" style="text-align:center">有完成记录的最长连续天数</div>
         </div>
         <div class="card">
-          <div class="card-title"><span class="card-badge">📅</span>本周完成率</div>
+          <div class="card-title"><span class="card-badge">📅</span><span data-i18n="card.week-rate">本周完成率</span></div>
           <div class="stat-ring" id="stat-week" style="--pct:0"><span>0%</span></div>
           <div class="muted-line" id="stat-week-detail" style="text-align:center"></div>
         </div>
         <div class="card">
-          <div class="card-title"><span class="card-badge">📖</span>生词本</div>
+          <div class="card-title"><span class="card-badge">📖</span><span data-i18n="card.vocab">生词本</span></div>
           <div id="stat-vocab" class="card-body"></div>
         </div>
         <div class="card">
-          <div class="card-title"><span class="card-badge">💡</span>灵感采用率</div>
+          <div class="card-title"><span class="card-badge">💡</span><span data-i18n="card.adopt">灵感采用率</span></div>
           <div class="stat-ring" id="stat-ideas" style="--pct:0"><span>0%</span></div>
           <div class="muted-line" id="stat-ideas-detail" style="text-align:center"></div>
         </div>
         <div class="card card-wide">
-          <div class="card-title"><span class="card-badge">📈</span>近 7 天完成趋势</div>
+          <div class="card-title"><span class="card-badge">📈</span><span data-i18n="card.trend">近 7 天完成趋势</span></div>
           <svg id="stat-chart" viewBox="0 0 300 80" preserveAspectRatio="none" style="width:100%;height:80px"></svg>
           <div class="muted-line" id="stat-chart-labels" style="display:flex;justify-content:space-between;margin-top:4px"></div>
         </div>
       </div>
     </section>
     <section class="page" id="page-tools">
-      <div class="page-head"><h1>🛠 工具</h1></div>
+      <div class="page-head"><h1 data-i18n="page.tools">🛠 工具</h1></div>
       <div class="grid">
 
         <!-- 抖音提取 -->
         <div class="card card-wide">
-          <div class="card-title"><span class="card-badge">🎬</span>抖音视频提取</div>
+          <div class="card-title"><span class="card-badge">🎬</span><span data-i18n="card.douyin">抖音视频提取</span></div>
           <div class="sub-hint">粘贴分享链接或视频 ID，后台解析：元数据 + 语音转文字（+可选 OCR）</div>
           <form class="plan-form" id="douyin-form">
             <input class="plan-input" id="douyin-input" type="text" placeholder="https://v.douyin.com/xxxx/ 或 视频ID" autocomplete="off">
@@ -331,7 +331,7 @@
 
         <!-- Obsidian 联动 -->
         <div class="card">
-          <div class="card-title"><span class="card-badge">📓</span>Obsidian 联动</div>
+          <div class="card-title"><span class="card-badge">📓</span><span data-i18n="card.obsidian">Obsidian 联动</span></div>
           <div class="sub-hint">一键跳转到你的知识库（需要已安装 Obsidian）</div>
           <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
             <a class="btn-small obsidian-btn" href="javascript:void(0)" data-obsidian="daily">📅 打开/新建今日日记</a>
@@ -342,9 +342,15 @@
 
         <!-- 设置 -->
         <div class="card">
-          <div class="card-title"><span class="card-badge">⚙️</span>设置</div>
+          <div class="card-title"><span class="card-badge">⚙️</span><span data-i18n="card.settings">设置</span></div>
           <div class="sub-hint">昵称与天气城市</div>
           <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
+            <label class="set-label">🌐 语言 / Language
+              <select class="plan-input" id="set-language">
+                <option value="zh">中文</option>
+                <option value="en">English</option>
+              </select>
+            </label>
             <label class="set-label">昵称
               <input class="plan-input" id="set-nickname" type="text" placeholder="你的昵称">
             </label>
@@ -367,7 +373,7 @@
 
         <!-- 资源收藏 -->
         <div class="card card-wide">
-          <div class="card-title"><span class="card-badge">🔖</span>资源收藏 <span class="plan-count" id="links-count"></span></div>
+          <div class="card-title"><span class="card-badge">🔖</span><span data-i18n="card.links">资源收藏</span> <span class="plan-count" id="links-count"></span></div>
           <div class="sub-hint">常用网站 / 参考资料，首页会展示前 5 条</div>
           <form class="plan-form" id="links-form">
             <input class="plan-input" id="link-title" type="text" placeholder="标题" autocomplete="off" style="max-width:140px">
@@ -379,7 +385,7 @@
 
         <!-- 数据备份 -->
         <div class="card">
-          <div class="card-title"><span class="card-badge">💾</span>数据</div>
+          <div class="card-title"><span class="card-badge">💾</span><span data-i18n="card.data">数据</span></div>
           <div class="sub-hint">备份与导出</div>
           <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
             <a class="btn-small" href="/api/export" style="text-align:center">📦 下载全部数据 (zip)</a>
