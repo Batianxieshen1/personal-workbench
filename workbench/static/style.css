@@ -13,17 +13,71 @@
   --accent-ink: #8a6d3b;    /* 强调上的文字 */
   --danger: #b3543f;        /* 删除/危险 */
   --shadow: rgba(120, 90, 40, 0.08);
+  --shadow-lift: rgba(120, 90, 40, 0.16);
   --radius: 14px;
+  --t-fast: 0.15s ease;
+  --t: 0.25s cubic-bezier(0.25, 0.8, 0.35, 1);
+  --t-bounce: 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  background: var(--bg);
+  background: linear-gradient(165deg, #f6efdf 0%, #f3ead9 55%, #efe3cb 100%);
+  background-attachment: fixed;
   color: var(--ink);
   font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
   font-size: 15px;
   line-height: 1.6;
+}
+
+/* ═══ 全局动效基调 ═══ */
+.card, .guide-card, .nav-item, .btn-small, .plan-item, .vocab-item, .stage-item {
+  transition: transform var(--t), box-shadow var(--t), background var(--t-fast), border-color var(--t-fast), opacity var(--t-fast);
+}
+
+/* 卡片 hover 提升 */
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 22px var(--shadow-lift);
+  border-color: var(--accent);
+}
+
+/* 按钮 hover 微动 */
+.btn-small:hover { transform: translateY(-1px); box-shadow: 0 3px 8px var(--shadow-lift); }
+.btn-small:active { transform: translateY(0); }
+
+/* 卡片入场动画：错开上浮 */
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.grid .card, .guide-card {
+  animation: cardIn 0.45s var(--t) both;
+}
+/* 逐卡错开（前 8 张） */
+.grid .card:nth-child(1) { animation-delay: 0.02s; }
+.grid .card:nth-child(2) { animation-delay: 0.07s; }
+.grid .card:nth-child(3) { animation-delay: 0.12s; }
+.grid .card:nth-child(4) { animation-delay: 0.17s; }
+.grid .card:nth-child(5) { animation-delay: 0.22s; }
+.grid .card:nth-child(6) { animation-delay: 0.27s; }
+.grid .card:nth-child(7) { animation-delay: 0.32s; }
+.grid .card:nth-child(8) { animation-delay: 0.37s; }
+
+/* 页面切换：滑入淡入 */
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page.active { animation: pageIn 0.3s var(--t) both; }
+
+/* 尊重系统"减少动效"偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* ═══ 布局：侧边栏 + 主区 ═══ */
@@ -102,7 +156,13 @@ body {
 
 /* 时钟 + 天气 */
 .card-clock { text-align: center; }
-.clock-time { font-size: 40px; font-weight: 700; letter-spacing: 1px; line-height: 1.2; }
+.clock-time { font-size: 40px; font-weight: 700; letter-spacing: 1px; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.clock-time.tick { animation: clockPulse 0.3s var(--t-bounce); }
+@keyframes clockPulse {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
 .clock-date { color: var(--muted); font-size: 13.5px; margin-top: 2px; }
 .weather-line { margin-top: 12px; color: var(--accent-ink); font-size: 14px; }
 
@@ -127,7 +187,16 @@ body {
   border-radius: 9px;
   background: var(--bg);
 }
-.plan-item.done .plan-text { text-decoration: line-through; color: var(--muted); }
+.plan-item.done .plan-text { color: var(--muted); position: relative; }
+/* 完成划线动画：从左侧划过去 */
+.plan-item.done .plan-text::after {
+  content: ""; position: absolute; left: 0; top: 52%;
+  height: 1.5px; width: 100%;
+  background: var(--muted);
+  transform-origin: left;
+  animation: strikeIn 0.35s ease both;
+}
+@keyframes strikeIn { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
 .plan-check {
   width: 19px; height: 19px;
@@ -139,17 +208,24 @@ body {
   font-size: 12px; line-height: 1;
   color: transparent;
   display: flex; align-items: center; justify-content: center;
-  transition: background 0.15s;
+  transition: background 0.15s, transform var(--t-bounce), color 0.15s;
 }
-.plan-check.checked { background: var(--accent); color: var(--card); }
+.plan-check:hover { transform: scale(1.15); }
+.plan-check.checked { background: var(--accent); color: var(--card); animation: checkPop 0.3s var(--t-bounce); }
+@keyframes checkPop {
+  0% { transform: scale(0.6); }
+  60% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
 
 .plan-star {
   border: none; background: transparent;
   color: var(--card-border); cursor: pointer;
   font-size: 15px; padding: 2px 4px; border-radius: 6px; flex-shrink: 0;
+  transition: transform var(--t-bounce), color var(--t-fast);
 }
 .plan-star.on { color: var(--accent); }
-.plan-star:hover { color: var(--accent); }
+.plan-star:hover { transform: rotate(20deg) scale(1.25); color: var(--accent); }
 
 .plan-text { flex: 1; font-size: 14px; word-break: break-all; }
 
@@ -202,8 +278,14 @@ body {
 .board-stat .label { font-size: 12px; color: var(--muted); margin-top: 2px; }
 .skill-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
 .skill-name { width: 44px; font-size: 13px; color: var(--muted); flex-shrink: 0; }
+/* 进度条：从左侧生长 */
 .skill-bar { flex: 1; height: 8px; background: var(--accent-soft); border-radius: 4px; overflow: hidden; }
-.skill-bar > i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+.skill-bar > i {
+  display: block; height: 100%; background: var(--accent); border-radius: 4px;
+  transform-origin: left;
+  animation: barGrow 0.8s var(--t) both;
+}
+@keyframes barGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 .skill-value { width: 36px; text-align: right; font-size: 13px; font-weight: 700; }
 
 /* 生词列表 */
@@ -271,10 +353,16 @@ body {
 .guide-card {
   background: var(--accent-soft);
   border: 1.5px solid var(--accent);
+  border-left: 5px solid var(--accent);
   border-radius: var(--radius);
   padding: 16px 18px;
   margin-bottom: 20px;
   box-shadow: 0 3px 10px var(--shadow);
+  animation: guideBreathe 3.5s ease-in-out infinite;
+}
+@keyframes guideBreathe {
+  0%, 100% { box-shadow: 0 3px 10px var(--shadow); }
+  50% { box-shadow: 0 5px 18px var(--shadow-lift); }
 }
 .guide-title { font-weight: 700; font-size: 15px; margin-bottom: 10px; color: var(--accent-ink); }
 .guide-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
@@ -297,7 +385,12 @@ body {
 }
 .guide-nav-text { font-size: 13.5px; line-height: 1.7; color: var(--ink); }
 
-/* 统计环 */
+/* 统计环（@property 让 --pct 可动画；不支持的浏览器降级为直接显示） */
+@property --pct {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
 .stat-ring {
   width: 120px; height: 120px;
   margin: 6px auto 12px;
@@ -305,6 +398,7 @@ body {
   background: conic-gradient(var(--accent) calc(var(--pct) * 1%), var(--accent-soft) 0);
   display: flex; align-items: center; justify-content: center;
   position: relative;
+  transition: --pct 0.9s var(--t);
 }
 .stat-ring::before {
   content: ""; position: absolute; inset: 12px;

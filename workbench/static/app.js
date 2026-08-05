@@ -260,11 +260,20 @@ function loadClock() {
   const timeEl = document.getElementById("clock-time");
   const dateEl = document.getElementById("clock-date");
   const weekdays = ["日", "一", "二", "三", "四", "五", "六"];
+  let lastMinute = "";
   const tick = () => {
     const now = new Date();
     const hh = String(now.getHours()).padStart(2, "0");
     const mm = String(now.getMinutes()).padStart(2, "0");
-    timeEl.textContent = `${hh}:${mm}`;
+    const minute = `${hh}:${mm}`;
+    timeEl.textContent = minute;
+    // 分钟变化时来一次脉冲动效
+    if (minute !== lastMinute) {
+      timeEl.classList.remove("tick");
+      void timeEl.offsetWidth;  // 强制重排，让动画可重放
+      timeEl.classList.add("tick");
+      lastMinute = minute;
+    }
     dateEl.textContent =
       `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 星期${weekdays[now.getDay()]}`;
   };
