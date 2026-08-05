@@ -6,7 +6,7 @@
 <title>个人工作台</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
 <link rel="manifest" href="/manifest.webmanifest">
-<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/style.css?v=20260805">
 </head>
 <body>
 
@@ -64,7 +64,7 @@
 
       <!-- 今日行动指南：打开第一眼看到 -->
       <div class="guide-card" id="guide-card">
-        <div class="guide-title" data-i18n="guide.title">🗺 今日行动 <span class="plan-count" id="guide-count"></span>
+        <div class="guide-title"><span data-i18n="guide.title">🗺 今日行动</span> <span class="plan-count" id="guide-count"></span>
           <button class="btn-small ghost" id="notify-btn" style="padding:2px 10px;font-size:12px;float:right">🔔 开启提醒</button>
         </div>
         <div class="guide-nav" id="guide-nav"></div>
@@ -399,7 +399,7 @@
   </main>
 </div>
 
-<script src="/app.js"></script>
+<script src="/app.js?v=20260805"></script>
 <script>
   // PWA：注册 Service Worker（仅安全上下文生效，失败静默）
   if ("serviceWorker" in navigator) {

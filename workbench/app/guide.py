@@ -81,8 +81,17 @@ def build_guide(today: str | None = None) -> list:
 # ── AI 晨间导航（当天缓存，不重复调 AI） ────────────────────
 
 _nav_cache: dict[str, dict] = {}
+# 最多保留最近 7 天的导航缓存（防止无限增长）
+MAX_NAV_CACHE_DAYS = 7
 
 _NAV_SYSTEM = "你是清晨导航员：基于用户的真实数据，用 3 句话告诉他今天最重要的是什么、为什么、怎么开始。语气温暖简洁，不要列清单。"
+
+
+def _trim_nav_cache() -> None:
+    """丢弃 7 天前的缓存条目。"""
+    cutoff = (dt.date.today() - dt.timedelta(days=MAX_NAV_CACHE_DAYS)).isoformat()
+    for d in [k for k in _nav_cache if k < cutoff]:
+        del _nav_cache[d]
 
 
 def morning_nav(today: str | None = None) -> dict:
@@ -117,6 +126,7 @@ def morning_nav(today: str | None = None) -> dict:
     except deepseek.AIError as e:
         return {"date": d, "error": True, "reason": e.reason}
     _nav_cache[d] = nav
+    _trim_nav_cache()
     return nav
 
 

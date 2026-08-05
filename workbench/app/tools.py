@@ -25,6 +25,8 @@ TIMEOUT_SEC = 600
 
 _jobs: dict[str, dict] = {}
 _jobs_lock = threading.Lock()
+# 内存里最多保留的任务数（防止无限增长）
+MAX_JOBS = 20
 
 
 def extract_video_id(text: str) -> str | None:
@@ -67,6 +69,11 @@ def start_job(text: str, ocr: bool = False) -> str:
     job_id = uuid.uuid4().hex[:8]
     with _jobs_lock:
         _jobs[job_id] = {"status": "pending"}
+        # 超出上限时丢弃最旧的已完成/失败任务（防止内存无限增长）
+        if len(_jobs) > MAX_JOBS:
+            for old_id in list(_jobs.keys())[: len(_jobs) - MAX_JOBS]:
+                if _jobs[old_id]["status"] in ("done", "error"):
+                    del _jobs[old_id]
     threading.Thread(target=_run, args=(job_id, video_id, ocr), daemon=True).start()
     return job_id
 

@@ -5,7 +5,7 @@
 - fetch：静态资源缓存优先 + 回源更新；/api/* 一律不拦截（保证数据新鲜）
 注意：SW 仅在安全上下文生效（localhost / HTTPS），局域网 IP 需要部署 HTTPS。
 */
-const CACHE = "workbench-v1";
+const CACHE = "workbench-v2";
 const ASSETS = ["/", "/style.css", "/app.js", "/icon.svg", "/manifest.webmanifest"];
 
 self.addEventListener("install", (e) => {

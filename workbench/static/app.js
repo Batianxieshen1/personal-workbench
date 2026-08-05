@@ -57,8 +57,9 @@ function t(key) {
   return (I18N[LANG] && I18N[LANG][key]) || I18N.zh[key] || key;
 }
 function applyI18n() {
+  // 只替换"叶子元素"（不含子元素的节点），避免误删按钮/计数等子结构
   document.querySelectorAll("[data-i18n]").forEach((el) => {
-    el.textContent = t(el.dataset.i18n);
+    if (el.children.length === 0) el.textContent = t(el.dataset.i18n);
   });
 }
 // 启动时从后端读取语言偏好
@@ -71,14 +72,21 @@ async function initLanguage() {
   document.dispatchEvent(new CustomEvent("lang-ready"));
 }
 
-// ── 基础请求封装 ──
+// ── 基础请求封装（30 秒超时，防止 AI 慢时无限等待） ──
 async function api(path, options = {}) {
-  const resp = await fetch(path, {
-    headers: { "Content-Type": "application/json" },
-    ...options,
-  });
-  if (!resp.ok) throw new Error(`${path} → HTTP ${resp.status}`);
-  return resp.json();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30000);
+  try {
+    const resp = await fetch(path, {
+      headers: { "Content-Type": "application/json" },
+      signal: controller.signal,
+      ...options,
+    });
+    if (!resp.ok) throw new Error(`${path} → HTTP ${resp.status}`);
+    return resp.json();
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 // ── hash 路由 ──
@@ -173,7 +181,7 @@ async function loadGuideNav() {
   }
 }
 
-async function loadGuide() {
+async function loadGuide(retry = true) {
   const listEl = document.getElementById("guide-list");
   try {
     const actions = await api("/api/guide");
@@ -203,8 +211,14 @@ async function loadGuide() {
         }, 300);
       });
     });
-  } catch {
-    listEl.innerHTML = '<li class="guide-item" style="border:none">指南加载失败</li>';
+  } catch (e) {
+    // 失败自动重试一次（服务重启瞬间的连接拒绝很常见），再失败显示原因
+    if (retry) {
+      setTimeout(() => loadGuide(false), 1200);
+      listEl.innerHTML = '<li class="guide-item" style="border:none">🔄 加载中…</li>';
+      return;
+    }
+    listEl.innerHTML = `<li class="guide-item" style="border:none">⚠️ 指南加载失败（${escapeHtml(e.message || "未知错误")}）</li>`;
   }
 }
 
@@ -346,7 +360,9 @@ function loadClock() {
       `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 星期${weekdays[now.getDay()]}`;
   };
   tick();
-  setInterval(tick, 1000);
+  // 防泄漏：每次进入首页先清掉旧定时器再启动（loadHome 会被反复调用）
+  if (window.__clockTimer) clearInterval(window.__clockTimer);
+  window.__clockTimer = setInterval(tick, 1000);
 }
 
 // 天气（单卡容错：失败只影响这张卡）
