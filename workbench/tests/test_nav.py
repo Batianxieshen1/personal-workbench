@@ -8,8 +8,9 @@ from app import guide, storage
 
 @pytest.fixture(autouse=True)
 def _clear_cache():
-    """_nav_cache 是模块级共享的，每个测试前清空防止相互污染。"""
+    """缓存是模块级共享的，每个测试前清空防止相互污染。"""
     guide._nav_cache.clear()
+    guide._best_cache.clear()
 
 
 def test_morning_nav_generates_and_caches(monkeypatch, tmp_path):
@@ -75,3 +76,45 @@ def test_best_idea_no_ideas(monkeypatch, tmp_path):
     monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
     monkeypatch.setattr(guide.ideas, "get_today", lambda d: [])
     assert guide.best_idea_today("2026-08-04") is None
+
+
+def test_best_idea_cached_per_day(monkeypatch, tmp_path):
+    """当天第二次调用不重复调 AI（省 token）。"""
+    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
+    monkeypatch.setattr(guide.ideas, "get_today", lambda d: [
+        {"id": "a", "text": "点子一", "status": "kept"},
+    ])
+    calls = {"n": 0}
+
+    def fake_chat(prompt, system="", timeout=60.0):
+        calls["n"] += 1
+        return "a | 理由"
+
+    monkeypatch.setattr(guide.deepseek, "chat", fake_chat)
+    guide.best_idea_today("2026-08-04")
+    guide.best_idea_today("2026-08-04")  # 命中缓存
+    assert calls["n"] == 1
+    # 第二天重新调用
+    guide.best_idea_today("2026-08-05")
+    assert calls["n"] == 2
+
+
+def test_best_idea_failure_not_cached(monkeypatch, tmp_path):
+    """失败不缓存：下次调用还能重试。"""
+    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
+    monkeypatch.setattr(guide.ideas, "get_today", lambda d: [
+        {"id": "a", "text": "点子一", "status": "kept"},
+    ])
+    calls = {"n": 0}
+
+    def flaky_chat(prompt, system="", timeout=60.0):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise guide.deepseek.AIError("挂了", reason="network")
+        return "a | 恢复成功"
+
+    monkeypatch.setattr(guide.deepseek, "chat", flaky_chat)
+    assert guide.best_idea_today("2026-08-04") is None  # 第一次失败
+    best = guide.best_idea_today("2026-08-04")  # 重试成功
+    assert best["text"] == "点子一"
+    assert calls["n"] == 2

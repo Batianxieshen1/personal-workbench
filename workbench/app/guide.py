@@ -130,17 +130,24 @@ def morning_nav(today: str | None = None) -> dict:
     return nav
 
 
-# ── AI 挑今日最佳灵感 ──────────────────────────────────────
+# ── AI 挑今日最佳灵感（当天缓存，省 token） ─────────────────
+
+_best_cache: dict[str, dict] = {}
 
 _BEST_SYSTEM = "你是选题策划：从用户今天的灵感里选出最值得先做的一条，一句话说明理由。"
 
 
 def best_idea_today(today: str | None = None) -> dict | None:
-    """今日 kept 灵感中让 AI 选一条最值得做的；无灵感/失败返回 None。"""
+    """今日 kept 灵感中让 AI 选一条最值得做的；无灵感/失败返回 None。
+
+    成功结果按天缓存（当天不重复调 AI）；失败不缓存（下次可重试）。
+    """
     d = today or dt.date.today().isoformat()
+    if d in _best_cache:
+        return _best_cache[d]
     today_ai = [i for i in ideas.get_today(d) if i["status"] == "kept"]
     if not today_ai:
-        return None
+        return None  # 无灵感不耗 AI，无需缓存
     try:
         options = "\n".join(f"{i['id']}: {i['text']}" for i in today_ai)
         reply = deepseek.chat(
@@ -153,6 +160,9 @@ def best_idea_today(today: str | None = None) -> dict | None:
         target = next((i for i in today_ai if i["id"] == idea_id), None) \
             or next((i for i in today_ai if idea_id in i["text"] or i["text"] in idea_id), None) \
             or today_ai[0]
-        return {"id": target["id"], "text": target["text"], "reason": reason.strip() or "最值得先做"}
+        result = {"id": target["id"], "text": target["text"], "reason": reason.strip() or "最值得先做"}
     except deepseek.AIError:
-        return None
+        return None  # 失败不缓存，下次重试
+    _best_cache[d] = result
+    _trim_nav_cache()
+    return result
