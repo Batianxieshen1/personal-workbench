@@ -130,7 +130,7 @@ def get_news(tab: str = "ai") -> dict:
     errors = 0
     for name, fetcher in _sources(tab):
         try:
-            items.extend(fetcher())
+            items.extend(fetcher()[:6])  # 每源最多 6 条，防止单源挤占
         except Exception:
             errors += 1
     data = {"tab": tab, "items": items[:20], "error": errors == len(_sources(tab))}
