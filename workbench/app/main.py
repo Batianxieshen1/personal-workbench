@@ -12,10 +12,12 @@ from pydantic import BaseModel
 
 from . import config as config_mod
 from . import deepseek
+from . import funds as funds_mod
 from . import guide as guide_mod
 from . import ideas as ideas_mod
 from . import ielts as ielts_mod
 from . import links as links_mod
+from . import news as news_mod
 from . import obsidian as obsidian_mod
 from . import plan as plan_mod
 from . import progress as progress_mod
@@ -113,6 +115,10 @@ class LinkPatch(BaseModel):
     title: str | None = None
     url: str | None = None
     note: str | None = None
+
+
+class FundIn(BaseModel):
+    code: str
 
 
 # ── 今日计划 ───────────────────────────────────────────────
@@ -454,6 +460,40 @@ def api_export():
 @app.get("/api/stats")
 def api_stats():
     return stats_mod.build_stats()
+
+
+# ── 新闻简讯 ───────────────────────────────────────────────
+@app.get("/api/news")
+def api_news(tab: str = "ai"):
+    return news_mod.get_news(tab)
+
+
+# ── 基金涨跌 ───────────────────────────────────────────────
+@app.get("/api/funds")
+def api_funds():
+    return funds_mod.get_funds()
+
+
+@app.get("/api/funds/history")
+def api_fund_history(code: str):
+    try:
+        return funds_mod.get_history(code)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.post("/api/funds")
+def api_add_fund(body: FundIn):
+    try:
+        return funds_mod.add_fund(body.code)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.delete("/api/funds/{code}")
+def api_remove_fund(code: str):
+    funds_mod.remove_fund(code)
+    return {"ok": True}
 
 
 # ── 今日行动指南 ──────────────────────────────────────────
