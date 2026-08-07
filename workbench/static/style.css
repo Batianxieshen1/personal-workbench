@@ -454,6 +454,52 @@ body {
   to { transform: scale(3.2); opacity: 0; }
 }
 
+/* ═══ 新闻简讯 ═══ */
+.news-tabs { display: flex; gap: 6px; margin-left: auto; }
+.news-tab {
+  border: 1px solid var(--card-border); background: var(--bg);
+  color: var(--muted); border-radius: 8px;
+  padding: 3px 12px; font-size: 12.5px; cursor: pointer;
+  transition: all var(--t-fast);
+}
+.news-tab:hover { border-color: var(--accent); color: var(--accent-ink); }
+.news-tab.active { background: var(--accent); border-color: var(--accent); color: var(--card); font-weight: 600; }
+.news-list { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.news-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 8px; border-radius: 8px;
+  font-size: 13.5px;
+  transition: background var(--t-fast);
+}
+.news-item:hover { background: var(--bg); }
+.news-item a { color: var(--ink); text-decoration: none; flex: 1; line-height: 1.45; }
+.news-item a:hover { color: var(--accent-ink); }
+.news-src {
+  flex-shrink: 0; font-size: 11px; color: var(--accent-ink);
+  background: var(--accent-soft); border-radius: 20px; padding: 2px 8px;
+  white-space: nowrap;
+}
+.news-time { flex-shrink: 0; font-size: 11px; color: var(--muted); }
+
+/* ═══ 基金涨跌 ═══ */
+.funds-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 10px; border-radius: 9px;
+  cursor: pointer; font-size: 14px;
+  transition: background var(--t-fast);
+}
+.funds-row:hover { background: var(--bg); }
+.funds-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.funds-value { width: 64px; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+.funds-change {
+  width: 76px; text-align: right; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.funds-up { color: #c0392b; }      /* 红涨（A股习惯） */
+.funds-down { color: #1e8449; }    /* 绿跌 */
+.funds-chart-box { padding: 8px 10px 2px; }
+.funds-chart-box svg { width: 100%; height: 90px; }
+
 /* 生词翻转卡片：复习队列 3D 翻转 */
 .flip-card { perspective: 600px; }
 .flip-inner {

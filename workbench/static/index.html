@@ -117,6 +117,26 @@
           <div class="card-title"><span class="card-badge">🔖</span><span data-i18n="card.links">资源收藏</span> <span class="plan-count" id="home-links-count"></span></div>
           <div id="home-links-body" class="card-body">加载中…</div>
         </div>
+
+        <!-- 新闻简讯 -->
+        <div class="card card-wide" id="home-news">
+          <div class="card-title"><span class="card-badge">📰</span><span data-i18n="card.news">新闻简讯</span>
+            <div class="news-tabs" id="news-tabs">
+              <button class="news-tab active" data-news-tab="ai">🤖 AI</button>
+              <button class="news-tab" data-news-tab="domestic">🇨🇳 国内</button>
+              <button class="news-tab" data-news-tab="global">🌍 国外</button>
+            </div>
+          </div>
+          <ul class="news-list" id="news-list"></ul>
+        </div>
+
+        <!-- 基金涨跌 -->
+        <div class="card card-wide" id="home-funds">
+          <div class="card-title"><span class="card-badge">💰</span><span data-i18n="card.funds">基金涨跌</span>
+            <span class="plan-count" id="funds-updated"></span>
+          </div>
+          <div class="funds-body" id="funds-body">加载中…</div>
+        </div>
       </div>
     </section>
 
@@ -351,6 +371,13 @@
                 <option value="en">English</option>
               </select>
             </label>
+            <label class="set-label">💰 关注基金（添加后自动识别名称）
+              <div class="set-row">
+                <input class="plan-input" id="set-fund" type="text" placeholder="6位基金代码，如 000961" autocomplete="off">
+                <button class="btn-small" id="set-fund-add-btn">➕ 添加</button>
+              </div>
+            </label>
+            <div id="set-fund-list" class="set-fund-list"></div>
             <label class="set-label">昵称
               <input class="plan-input" id="set-nickname" type="text" placeholder="你的昵称">
             </label>

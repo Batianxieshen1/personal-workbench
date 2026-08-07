@@ -27,6 +27,7 @@ const I18N = {
     "card.week-rate": "本周完成率", "card.adopt": "灵感采用率", "card.trend": "近 7 天完成趋势",
     "card.douyin": "抖音视频提取", "card.obsidian": "Obsidian 联动",
     "card.settings": "设置", "card.data": "数据",
+    "card.news": "新闻简讯", "card.funds": "基金涨跌",
   },
   en: {
     "brand": "Workbench",
@@ -49,6 +50,7 @@ const I18N = {
     "card.week-rate": "Week Rate", "card.adopt": "Adoption Rate", "card.trend": "7-Day Trend",
     "card.douyin": "Douyin Extract", "card.obsidian": "Obsidian",
     "card.settings": "Settings", "card.data": "Data",
+    "card.news": "News", "card.funds": "Funds",
   },
 };
 
@@ -118,6 +120,8 @@ function loadHome() {
   loadGuide();
   loadGuideNav();
   loadNotify();
+  loadNews();
+  loadFunds();
 }
 
 // ── 浏览器通知提醒 ──
@@ -1190,10 +1194,137 @@ function renderDailyChart(daily) {
   labelsEl.innerHTML = daily.map((d) => `<span>${d.date}</span>`).join("");
 }
 
+// ── 新闻简讯 ──
+let newsTab = "ai";
+
+async function loadNews() {
+  const listEl = document.getElementById("news-list");
+  listEl.innerHTML = '<li class="news-item" style="justify-content:center;color:var(--muted)">加载中…</li>';
+  try {
+    const data = await api(`/api/news?tab=${newsTab}`);
+    renderNews(data);
+  } catch {
+    listEl.innerHTML = '<li class="news-item" style="justify-content:center;color:var(--muted)">⚠️ 新闻加载失败</li>';
+  }
+}
+
+function renderNews(data) {
+  const listEl = document.getElementById("news-list");
+  if (!data.items.length) {
+    listEl.innerHTML = '<li class="news-item" style="justify-content:center;color:var(--muted)">暂无新闻</li>';
+    return;
+  }
+  listEl.innerHTML = data.items
+    .map((n) => `
+      <li class="news-item">
+        <a href="${escapeHtml(n.url)}" target="_blank" rel="noopener">${escapeHtml(n.title)}</a>
+        <span class="news-src">${escapeHtml(n.source)}</span>
+        <span class="news-time">${escapeHtml(n.time)}</span>
+      </li>`)
+    .join("");
+}
+
+document.getElementById("news-tabs").addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-news-tab]");
+  if (!btn) return;
+  newsTab = btn.dataset.newsTab;
+  document.querySelectorAll(".news-tab").forEach((b) => b.classList.toggle("active", b === btn));
+  loadNews();
+});
+
+// ── 基金涨跌 ──
+async function loadFunds() {
+  const body = document.getElementById("funds-body");
+  body.innerHTML = "加载中…";
+  try {
+    const data = await api("/api/funds");
+    renderFunds(data);
+  } catch {
+    body.innerHTML = "⚠️ 基金数据加载失败";
+  }
+}
+
+function renderFunds(data) {
+  const body = document.getElementById("funds-body");
+  document.getElementById("funds-updated").textContent = `更新 ${data.ts}`;
+  if (!data.funds.length) {
+    body.innerHTML = "暂无关注基金，去工具页添加";
+    return;
+  }
+  body.innerHTML = data.funds
+    .map((f) => {
+      const cls = f.change_pct > 0 ? "funds-up" : f.change_pct < 0 ? "funds-down" : "";
+      const arrow = f.change_pct > 0 ? "▲" : f.change_pct < 0 ? "▼" : "—";
+      return `
+      <div class="funds-row" data-fund="${f.code}" title="点击查看走势">
+        <span class="funds-name">${escapeHtml(f.name)}</span>
+        <span class="funds-value">${f.latest.toFixed(4)}</span>
+        <span class="funds-change ${cls}">${arrow} ${f.change_pct > 0 ? "+" : ""}${f.change_pct.toFixed(2)}%</span>
+      </div>`;
+    })
+    .join("");
+}
+
+// 点击基金展开 30 天走势
+document.getElementById("funds-body").addEventListener("click", async (e) => {
+  const row = e.target.closest("[data-fund]");
+  if (!row) return;
+  const code = row.dataset.fund;
+  const next = row.nextElementSibling;
+  if (next && next.classList.contains("funds-chart-box")) {
+    next.remove();
+    return;
+  }
+  const box = document.createElement("div");
+  box.className = "funds-chart-box";
+  box.innerHTML = "走势加载中…";
+  row.after(box);
+  try {
+    const hist = await api(`/api/funds/history?code=${code}`);
+    box.innerHTML = "";
+    box.appendChild(chartSvg(hist.points, hist.name));
+  } catch {
+    box.innerHTML = "走势加载失败";
+  }
+});
+
+// 折线图（基金走势通用）：红涨绿跌
+function chartSvg(points) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 300 90");
+  svg.setAttribute("preserveAspectRatio", "none");
+  const W = 300, H = 90, PAD = 6;
+  const vals = points.map((p) => p.value);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const span = max - min || 1;
+  const pts = points.map((p, i) => {
+    const x = PAD + (i * (W - PAD * 2)) / (points.length - 1 || 1);
+    const y = H - PAD - ((p.value - min) / span) * (H - PAD * 2);
+    return [x, y];
+  });
+  const line = pts.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
+  const up = vals[vals.length - 1] >= vals[0];
+  const color = up ? "#c0392b" : "#1e8449";  // 红涨绿跌
+  const area = `${line} L${W - PAD},${H - PAD} L${PAD},${H - PAD} Z`;
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="fgGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${color}" stop-opacity="0.3"/>
+        <stop offset="100%" stop-color="${color}" stop-opacity="0.02"/>
+      </linearGradient>
+    </defs>
+    <path d="${area}" fill="url(#fgGrad)"/>
+    <path d="${line}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round"/>
+    <circle cx="${pts[pts.length - 1][0]}" cy="${pts[pts.length - 1][1]}" r="2.5" fill="${color}"/>
+  `;
+  return svg;
+}
+
 // ── 工具页 ──
 async function loadToolsPage() {
   loadLinksManager();
   loadDouyinHistory();
+  loadFundManager();
   try {
     const cfg = await api("/api/config");
     document.getElementById("set-nickname").value = cfg.nickname;
@@ -1434,6 +1565,52 @@ document.addEventListener("keydown", (e) => {
   } else if (e.key === "s" || e.key === "S") {
     location.hash = "#/study";
   }
+});
+
+// ── 基金管理（工具页） ──
+async function loadFundManager() {
+  const el = document.getElementById("set-fund-list");
+  try {
+    const data = await api("/api/funds");
+    el.innerHTML = data.funds
+      .map((f) => `
+        <div class="vocab-item" style="margin-top:4px">
+          <span class="vocab-word" style="min-width:70px">${f.code}</span>
+          <span class="vocab-meaning" style="flex:1">${escapeHtml(f.name)}</span>
+          <button class="plan-del" data-fund-del="${f.code}" title="取消关注">✕</button>
+        </div>`)
+      .join("") || '<div class="muted-line">还没有关注基金</div>';
+  } catch {
+    el.innerHTML = '<div class="muted-line">加载失败</div>';
+  }
+}
+
+document.getElementById("set-fund-add-btn").addEventListener("click", async () => {
+  const input = document.getElementById("set-fund");
+  const code = input.value.trim();
+  if (!/^\d{6}$/.test(code)) {
+    toast("请输入 6 位基金代码");
+    return;
+  }
+  input.value = "";
+  try {
+    const r = await api("/api/funds", { method: "POST", body: JSON.stringify({ code }) });
+    toast(r.duplicate ? `已关注过 ${code}` : `✅ 已添加 ${r.name || code}`);
+  } catch {
+    toast("❌ 代码无效或无法获取");
+  }
+  loadFundManager();
+  loadFunds();
+});
+
+document.getElementById("set-fund-list").addEventListener("click", async (e) => {
+  const btn = e.target.closest("[data-fund-del]");
+  if (!btn) return;
+  try {
+    await api(`/api/funds/${btn.dataset.fundDel}`, { method: "DELETE" });
+  } catch { /* 兜底 */ }
+  loadFundManager();
+  loadFunds();
 });
 
 // ── 资源收藏管理（工具页） ──
