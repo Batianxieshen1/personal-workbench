@@ -14,8 +14,10 @@ const I18N = {
     "nav.group.sys": "⚙️ 系统",
     "nav.home": "首页", "nav.study": "学习", "nav.ielts": "雅思", "nav.ideas": "灵感",
     "nav.review": "复盘", "nav.stats": "统计", "nav.tools": "工具",
+    "nav.news": "资讯", "nav.funds": "基金",
     "page.study": "📚 学习", "page.ielts": "🎯 雅思", "page.ideas": "💡 灵感",
     "page.review": "📝 复盘", "page.stats": "📊 统计", "page.tools": "🛠 工具",
+    "page.news": "📰 资讯", "page.funds": "💰 基金涨跌",
     "guide.title": "今日行动",
     "card.plan": "今日计划", "card.progress": "学习进度", "card.ielts": "雅思速览",
     "card.ideas": "今日灵感", "card.review": "内容复盘", "card.links": "资源收藏",
@@ -37,8 +39,10 @@ const I18N = {
     "nav.group.sys": "⚙️ SYSTEM",
     "nav.home": "Home", "nav.study": "Study", "nav.ielts": "IELTS", "nav.ideas": "Ideas",
     "nav.review": "Review", "nav.stats": "Stats", "nav.tools": "Tools",
+    "nav.news": "News", "nav.funds": "Funds",
     "page.study": "📚 Study", "page.ielts": "🎯 IELTS", "page.ideas": "💡 Ideas",
     "page.review": "📝 Review", "page.stats": "📊 Stats", "page.tools": "🛠 Tools",
+    "page.news": "📰 News", "page.funds": "💰 Funds",
     "guide.title": "Today's Plan",
     "card.plan": "Today's Plan", "card.progress": "Study Progress", "card.ielts": "IELTS",
     "card.ideas": "Today's Ideas", "card.review": "Review", "card.links": "Bookmarks",
@@ -92,7 +96,7 @@ async function api(path, options = {}) {
 }
 
 // ── hash 路由 ──
-const PAGES = ["home", "study", "ielts", "ideas", "review", "stats", "tools"];
+const PAGES = ["home", "study", "ielts", "ideas", "review", "stats", "news", "funds", "tools"];
 
 function navigate() {
   const hash = location.hash.replace(/^#\//, "") || "home";
@@ -107,6 +111,8 @@ function navigate() {
   if (page === "ideas") loadIdeasPage();
   if (page === "review") loadReviewPage();
   if (page === "stats") loadStatsPage();
+  if (page === "news") loadNews();
+  if (page === "funds") { loadFunds(); loadFundManager(); }
   if (page === "tools") loadToolsPage();
 }
 
@@ -120,8 +126,6 @@ function loadHome() {
   loadGuide();
   loadGuideNav();
   loadNotify();
-  loadNews();
-  loadFunds();
 }
 
 // ── 浏览器通知提醒 ──
@@ -1324,7 +1328,6 @@ function chartSvg(points) {
 async function loadToolsPage() {
   loadLinksManager();
   loadDouyinHistory();
-  loadFundManager();
   try {
     const cfg = await api("/api/config");
     document.getElementById("set-nickname").value = cfg.nickname;

@@ -44,6 +44,12 @@
     </div>
 
     <div class="nav-group">
+      <div class="nav-group-title">📡 资讯</div>
+      <a class="nav-item" data-page="news" href="#/news"><span class="nav-ico">📰</span><span data-i18n="nav.news">资讯</span></a>
+      <a class="nav-item" data-page="funds" href="#/funds"><span class="nav-ico">💰</span><span data-i18n="nav.funds">基金</span></a>
+    </div>
+
+    <div class="nav-group">
       <div class="nav-group-title" data-i18n="nav.group.sys">⚙️ 系统</div>
       <a class="nav-item" data-page="tools" href="#/tools"><span class="nav-ico">🛠</span><span data-i18n="nav.tools">工具</span></a>
     </div>
@@ -116,26 +122,6 @@
         <div class="card" id="home-links">
           <div class="card-title"><span class="card-badge">🔖</span><span data-i18n="card.links">资源收藏</span> <span class="plan-count" id="home-links-count"></span></div>
           <div id="home-links-body" class="card-body">加载中…</div>
-        </div>
-
-        <!-- 新闻简讯 -->
-        <div class="card card-wide" id="home-news">
-          <div class="card-title"><span class="card-badge">📰</span><span data-i18n="card.news">新闻简讯</span>
-            <div class="news-tabs" id="news-tabs">
-              <button class="news-tab active" data-news-tab="ai">🤖 AI</button>
-              <button class="news-tab" data-news-tab="domestic">🇨🇳 国内</button>
-              <button class="news-tab" data-news-tab="global">🌍 国外</button>
-            </div>
-          </div>
-          <ul class="news-list" id="news-list"></ul>
-        </div>
-
-        <!-- 基金涨跌 -->
-        <div class="card card-wide" id="home-funds">
-          <div class="card-title"><span class="card-badge">💰</span><span data-i18n="card.funds">基金涨跌</span>
-            <span class="plan-count" id="funds-updated"></span>
-          </div>
-          <div class="funds-body" id="funds-body">加载中…</div>
         </div>
       </div>
     </section>
@@ -329,6 +315,40 @@
         </div>
       </div>
     </section>
+    <section class="page" id="page-news">
+      <div class="page-head">
+        <h1 data-i18n="page.news">📰 资讯</h1>
+        <div class="news-tabs page-news-tabs" id="news-tabs">
+          <button class="news-tab active" data-news-tab="ai">🤖 AI</button>
+          <button class="news-tab" data-news-tab="domestic">🇨🇳 国内</button>
+          <button class="news-tab" data-news-tab="global">🌍 国外</button>
+        </div>
+      </div>
+      <div class="card">
+        <ul class="news-list" id="news-list"></ul>
+      </div>
+    </section>
+    <section class="page" id="page-funds">
+      <div class="page-head">
+        <h1 data-i18n="page.funds">💰 基金涨跌</h1>
+        <p class="page-sub">按涨跌幅排序 · 红涨绿跌 · 点击查看 30 天走势</p>
+      </div>
+      <div class="grid">
+        <div class="card">
+          <div class="card-title"><span class="card-badge">📊</span>涨跌排行 <span class="plan-count" id="funds-updated"></span></div>
+          <div class="funds-body" id="funds-body">加载中…</div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="card-badge">🛠</span>管理关注</div>
+          <div class="sub-hint">添加基金代码自动识别名称</div>
+          <div class="set-row" style="margin-top:8px">
+            <input class="plan-input" id="set-fund" type="text" placeholder="6位代码，如 000961" autocomplete="off">
+            <button class="btn-small" id="set-fund-add-btn">➕ 添加</button>
+          </div>
+          <div id="set-fund-list" class="set-fund-list" style="margin-top:8px"></div>
+        </div>
+      </div>
+    </section>
     <section class="page" id="page-tools">
       <div class="page-head"><h1 data-i18n="page.tools">🛠 工具</h1></div>
       <div class="grid">
@@ -371,13 +391,6 @@
                 <option value="en">English</option>
               </select>
             </label>
-            <label class="set-label">💰 关注基金（添加后自动识别名称）
-              <div class="set-row">
-                <input class="plan-input" id="set-fund" type="text" placeholder="6位基金代码，如 000961" autocomplete="off">
-                <button class="btn-small" id="set-fund-add-btn">➕ 添加</button>
-              </div>
-            </label>
-            <div id="set-fund-list" class="set-fund-list"></div>
             <label class="set-label">昵称
               <input class="plan-input" id="set-nickname" type="text" placeholder="你的昵称">
             </label>
