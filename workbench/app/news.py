@@ -115,7 +115,6 @@ def _sources(tab: str) -> list:
     if tab == "domestic":
         return [("百度热搜", fetch_baidu),
                 ("IT之家", lambda: fetch_rss(IT_HOME_RSS, "IT之家")),
-                ("36氪", lambda: fetch_rss(KR36_RSS, "36氪")),
                 ("B站", fetch_bili)]
     return [("BBC中文", lambda: fetch_rss(BBC_RSS, "BBC中文")),
             ("Hacker News", fetch_hn),
@@ -126,16 +125,21 @@ def fetch_baidu() -> list:
     """百度实时热搜（综合：政治/民生/社会/娱乐等）。"""
     data = _get(BAIDU_HOT).json()
     items = []
-    for card in (data.get("data", {}).get("cards") or []):
-        for item in (card.get("content") or []):
-            word = item.get("word") or item.get("query")
-            if word:
-                items.append({
-                    "title": word,
-                    "source": "百度热搜",
-                    "url": item.get("url", ""),
-                    "time": "",
-                })
+    seen = set()
+
+    def walk(node):
+        if isinstance(node, dict):
+            word = node.get("word") or node.get("query")
+            if word and word not in seen:
+                seen.add(word)
+                items.append({"title": word, "source": "百度热搜", "url": node.get("url", ""), "time": ""})
+            for v in node.values():
+                walk(v)
+        elif isinstance(node, list):
+            for v in node:
+                walk(v)
+
+    walk(data)
     return items[:15]
 
 
