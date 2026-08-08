@@ -464,8 +464,8 @@ def api_stats():
 
 # ── 新闻简讯 ───────────────────────────────────────────────
 @app.get("/api/news")
-def api_news(tab: str = "ai"):
-    return news_mod.get_news(tab)
+def api_news(tab: str = "ai", refresh: bool = False):
+    return news_mod.get_news(tab, refresh=refresh)
 
 
 # ── 基金涨跌 ───────────────────────────────────────────────

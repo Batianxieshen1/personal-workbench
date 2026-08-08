@@ -143,14 +143,18 @@ def fetch_baidu() -> list:
     return items[:15]
 
 
-def get_news(tab: str = "ai") -> dict:
-    """拉取板块新闻（带 1 小时缓存，单源失败不影响其他源）。"""
+def get_news(tab: str = "ai", refresh: bool = False) -> dict:
+    """拉取板块新闻（带 1 小时缓存，单源失败不影响其他源）。
+
+    refresh=True 时绕过缓存强制重拉（手动刷新用）。
+    """
     tab = tab if tab in ("ai", "domestic", "global") else "ai"
     now = time.time()
-    with _lock:
-        cached = _cache.get(tab)
-        if cached and now - cached["ts"] < CACHE_TTL:
-            return cached["data"]
+    if not refresh:
+        with _lock:
+            cached = _cache.get(tab)
+            if cached and now - cached["ts"] < CACHE_TTL:
+                return cached["data"]
     items = []
     errors = 0
     sources = _sources(tab)
@@ -162,7 +166,12 @@ def get_news(tab: str = "ai") -> dict:
                 items.extend(fetcher()[:6])      # 多源板块：每源最多 6 条防挤占
         except Exception:
             errors += 1
-    data = {"tab": tab, "items": items[:20], "error": errors == len(sources)}
+    data = {
+        "tab": tab,
+        "items": items[:20],
+        "error": errors == len(sources),
+        "fetched_at": dt.datetime.now().strftime("%m-%d %H:%M"),
+    }
     with _lock:
         _cache[tab] = {"ts": now, "data": data}
     return data

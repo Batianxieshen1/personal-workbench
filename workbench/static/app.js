@@ -1201,11 +1201,11 @@ function renderDailyChart(daily) {
 // ── 新闻简讯 ──
 let newsTab = "ai";
 
-async function loadNews() {
+async function loadNews(refresh = false) {
   const listEl = document.getElementById("news-list");
   listEl.innerHTML = '<li class="news-item" style="justify-content:center;color:var(--muted)">加载中…</li>';
   try {
-    const data = await api(`/api/news?tab=${newsTab}`);
+    const data = await api(`/api/news?tab=${newsTab}${refresh ? "&refresh=1" : ""}`);
     renderNews(data);
   } catch {
     listEl.innerHTML = '<li class="news-item" style="justify-content:center;color:var(--muted)">⚠️ 新闻加载失败</li>';
@@ -1214,11 +1214,16 @@ async function loadNews() {
 
 function renderNews(data) {
   const listEl = document.getElementById("news-list");
+  listEl.innerHTML = `
+    <li class="news-meta">
+      <span class="news-updated">🕐 更新于 ${escapeHtml(data.fetched_at || "—")}</span>
+      <button class="btn-small ghost news-refresh" title="手动刷新">🔄 刷新</button>
+    </li>`;
   if (!data.items.length) {
-    listEl.innerHTML = '<li class="news-item" style="justify-content:center;color:var(--muted)">暂无新闻</li>';
+    listEl.innerHTML += '<li class="news-item" style="justify-content:center;color:var(--muted)">暂无新闻</li>';
     return;
   }
-  listEl.innerHTML = data.items
+  listEl.innerHTML += data.items
     .map((n) => `
       <li class="news-item">
         <a href="${escapeHtml(n.url)}" target="_blank" rel="noopener">${escapeHtml(n.title)}</a>
@@ -1226,6 +1231,8 @@ function renderNews(data) {
         <span class="news-time">${escapeHtml(n.time)}</span>
       </li>`)
     .join("");
+  // 刷新按钮（innerHTML 重建后重新绑定）
+  listEl.querySelector(".news-refresh").addEventListener("click", () => loadNews(true));
 }
 
 document.getElementById("news-tabs").addEventListener("click", (e) => {
