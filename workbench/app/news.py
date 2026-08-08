@@ -19,9 +19,11 @@ import requests
 
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
 
-AIHOT_URL = "https://aihot.virxact.com/api/v1/items?mode=selected&window=24h&limit=15"
+AIHOT_URL = "https://aihot.virxact.com/api/v1/items?mode=selected&window=24h&limit=20"
 IT_HOME_RSS = "https://www.ithome.com/rss/"
 BILI_HOT = "https://api.bilibili.com/x/web-interface/ranking/v2?rid=0"
+KR36_RSS = "https://36kr.com/feed"
+BAIDU_HOT = "https://top.baidu.com/api/board?platform=wise&tab=realtime"
 HN_API = "https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=15"
 BBC_RSS = "https://feeds.bbci.co.uk/zhongwen/simp/rss.xml"
 TECHCRUNCH_RSS = "https://techcrunch.com/category/artificial-intelligence/feed/"
@@ -111,11 +113,30 @@ def _sources(tab: str) -> list:
     if tab == "ai":
         return [("aihot", fetch_aihot)]
     if tab == "domestic":
-        return [("IT之家", lambda: fetch_rss(IT_HOME_RSS, "IT之家")),
+        return [("百度热搜", fetch_baidu),
+                ("IT之家", lambda: fetch_rss(IT_HOME_RSS, "IT之家")),
+                ("36氪", lambda: fetch_rss(KR36_RSS, "36氪")),
                 ("B站", fetch_bili)]
-    return [("Hacker News", fetch_hn),
-            ("BBC中文", lambda: fetch_rss(BBC_RSS, "BBC中文")),
+    return [("BBC中文", lambda: fetch_rss(BBC_RSS, "BBC中文")),
+            ("Hacker News", fetch_hn),
             ("TechCrunch", lambda: fetch_rss(TECHCRUNCH_RSS, "TechCrunch"))]
+
+
+def fetch_baidu() -> list:
+    """百度实时热搜（综合：政治/民生/社会/娱乐等）。"""
+    data = _get(BAIDU_HOT).json()
+    items = []
+    for card in (data.get("data", {}).get("cards") or []):
+        for item in (card.get("content") or []):
+            word = item.get("word") or item.get("query")
+            if word:
+                items.append({
+                    "title": word,
+                    "source": "百度热搜",
+                    "url": item.get("url", ""),
+                    "time": "",
+                })
+    return items[:15]
 
 
 def get_news(tab: str = "ai") -> dict:
@@ -128,12 +149,16 @@ def get_news(tab: str = "ai") -> dict:
             return cached["data"]
     items = []
     errors = 0
-    for name, fetcher in _sources(tab):
+    sources = _sources(tab)
+    for name, fetcher in sources:
         try:
-            items.extend(fetcher()[:6])  # 每源最多 6 条，防止单源挤占
+            if len(sources) == 1:
+                items.extend(fetcher())          # AI 板块：单源拿满
+            else:
+                items.extend(fetcher()[:6])      # 多源板块：每源最多 6 条防挤占
         except Exception:
             errors += 1
-    data = {"tab": tab, "items": items[:20], "error": errors == len(_sources(tab))}
+    data = {"tab": tab, "items": items[:20], "error": errors == len(sources)}
     with _lock:
         _cache[tab] = {"ts": now, "data": data}
     return data
