@@ -573,6 +573,28 @@ document.getElementById("study-stages").addEventListener("click", async (e) => {
   loadHomeCards();
 });
 
+// 番茄钟完成提示音（Web Audio 生成三声"叮"，零依赖）
+function playChime() {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    const ctx = new Ctx();
+    [0, 0.28, 0.56].forEach((t, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.value = 880 + i * 220;
+      osc.type = "sine";
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      const start = ctx.currentTime + t;
+      gain.gain.setValueAtTime(0.001, start);
+      gain.gain.exponentialRampToValueAtTime(0.3, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.4);
+      osc.start(start);
+      osc.stop(start + 0.45);
+    });
+  } catch { /* 浏览器不支持则静默 */ }
+}
+
 // ── 番茄钟 ──
 const POMODORO_SECONDS = 25 * 60;
 let pomodoroLeft = POMODORO_SECONDS;
@@ -603,7 +625,7 @@ document.getElementById("pomodoro-start").addEventListener("click", () => {
       pomodoroLeft = POMODORO_SECONDS;
       btn.textContent = "▶ 开始";
       document.getElementById("pomodoro-status").textContent = "🍅 完成！休息一下吧";
-      new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=").play().catch(() => {});
+      playChime();
       return;
     }
     renderPomodoro();

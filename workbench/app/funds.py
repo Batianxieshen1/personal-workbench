@@ -133,9 +133,18 @@ def get_funds() -> dict:
 
 
 def get_history(code: str, days: int = 30) -> dict:
-    """单只基金近 N 天净值曲线。"""
+    """单只基金近 N 天净值曲线（5 分钟缓存，反复点击不重复请求）。"""
+    now = time.time()
+    key = f"hist:{code}"
+    with _lock:
+        cached = _cache.get(key)
+        if cached and now - cached["ts"] < CACHE_TTL:
+            return cached["data"]
     info = _fetch_fund(code)
     if not info:
         raise ValueError(f"基金不存在：{code}")
     points = [{"date": p["date"], "value": p["value"]} for p in info["history"][-days:]]
-    return {"code": code, "name": info["name"], "points": points}
+    data = {"code": code, "name": info["name"], "points": points}
+    with _lock:
+        _cache[key] = {"ts": now, "data": data}
+    return data

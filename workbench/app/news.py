@@ -14,6 +14,7 @@ import datetime as dt
 import re
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 import requests
 
@@ -158,13 +159,21 @@ def get_news(tab: str = "ai", refresh: bool = False) -> dict:
     items = []
     errors = 0
     sources = _sources(tab)
-    for name, fetcher in sources:
+    single = len(sources) == 1
+
+    def _fetch_one(spec):
+        name, fetcher = spec
         try:
-            if len(sources) == 1:
-                items.extend(fetcher())          # AI 板块：单源拿满
-            else:
-                items.extend(fetcher()[:6])      # 多源板块：每源最多 6 条防挤占
+            return (fetcher() if single else fetcher()[:6]), True
         except Exception:
+            return [], False
+
+    # 多源并发拉取（串行 6 秒 → 并行 2 秒）
+    with ThreadPoolExecutor(max_workers=len(sources)) as pool:
+        results = list(pool.map(_fetch_one, sources))
+    for part, ok in results:
+        items.extend(part)
+        if not ok:
             errors += 1
     data = {
         "tab": tab,

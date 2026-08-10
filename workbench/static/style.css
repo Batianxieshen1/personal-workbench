@@ -636,6 +636,27 @@ body {
 }
 .guide-nav-text { font-size: 13.5px; line-height: 1.7; color: var(--ink); }
 
+/* 快捷入口 */
+.quick-links {
+  display: flex; gap: 10px; margin: -10px 0 20px;
+}
+.quick-link {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-size: 13.5px;
+  color: var(--accent-ink);
+  text-decoration: none;
+  box-shadow: 0 2px 6px var(--shadow);
+  transition: transform var(--t), box-shadow var(--t), border-color var(--t-fast);
+}
+.quick-link:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px var(--shadow-lift);
+}
+
 /* 统计环（@property 让 --pct 可动画；不支持的浏览器降级为直接显示） */
 @property --pct {
   syntax: "<number>";
