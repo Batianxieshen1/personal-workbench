@@ -30,6 +30,26 @@ const I18N = {
     "card.douyin": "抖音视频提取", "card.obsidian": "Obsidian 联动",
     "card.settings": "设置", "card.data": "数据",
     "card.news": "新闻简讯", "card.funds": "基金涨跌",
+    "btn.add": "添加", "btn.save": "保存", "btn.ai.draft": "🤖 AI 起草",
+    "btn.ai.weekly": "🤖 AI 生成", "btn.regenerate": "🎲 换一批",
+    "btn.go": "去处理 →", "btn.notify": "🔔 开启提醒",
+    "btn.know": "✓ 认识", "btn.dont.know": "↺ 不认识",
+    "btn.template": "📋 添加今日雅思任务", "btn.sync.obsidian": "📓 同步到 Obsidian 日记",
+    "btn.refresh": "🔄 刷新", "btn.add.fund": "➕ 添加",
+    "pomodoro.start": "▶ 开始", "pomodoro.pause": "⏸ 暂停",
+    "pomodoro.resume": "▶ 继续", "pomodoro.reset": "↺ 重置",
+    "pomodoro.done": "🍅 完成！休息一下吧",
+    "empty.plan": "✨ 今天还没有计划，先加一项吧",
+    "empty.vocab": "生词本是空的，添加第一个单词吧 📖",
+    "empty.ideas": "今日还没有灵感", "empty.ideas.all": "没有匹配的灵感",
+    "empty.links": "还没有收藏", "empty.news": "暂无新闻",
+    "empty.funds": "暂无关注基金，去基金页添加",
+    "guide.done": "🎉 今日行动全部完成，休息吧！",
+    "guide.loading": "🔄 加载中…", "guide.fail": "⚠️ 指南加载失败",
+    "news.loading": "加载中…", "news.fail": "⚠️ 新闻加载失败",
+    "funds.loading": "加载中…", "funds.fail": "⚠️ 基金数据加载失败",
+    "funds.chart": "走势加载中…", "funds.chart.fail": "走势加载失败",
+    "toast.saved": "已保存", "toast.added": "已添加",
   },
   en: {
     "brand": "Workbench",
@@ -55,6 +75,26 @@ const I18N = {
     "card.douyin": "Douyin Extract", "card.obsidian": "Obsidian",
     "card.settings": "Settings", "card.data": "Data",
     "card.news": "News", "card.funds": "Funds",
+    "btn.add": "Add", "btn.save": "Save", "btn.ai.draft": "🤖 AI Draft",
+    "btn.ai.weekly": "🤖 AI Generate", "btn.regenerate": "🎲 Regenerate",
+    "btn.go": "Go →", "btn.notify": "🔔 Notify",
+    "btn.know": "✓ Know", "btn.dont.know": "↺ Don't know",
+    "btn.template": "📋 Add IELTS Tasks", "btn.sync.obsidian": "📓 Sync to Obsidian",
+    "btn.refresh": "🔄 Refresh", "btn.add.fund": "➕ Add",
+    "pomodoro.start": "▶ Start", "pomodoro.pause": "⏸ Pause",
+    "pomodoro.resume": "▶ Resume", "pomodoro.reset": "↺ Reset",
+    "pomodoro.done": "🍅 Done! Take a break",
+    "empty.plan": "✨ No plans yet today, add one",
+    "empty.vocab": "No words yet, add the first one 📖",
+    "empty.ideas": "No ideas today", "empty.ideas.all": "No matching ideas",
+    "empty.links": "No bookmarks yet", "empty.news": "No news",
+    "empty.funds": "No funds followed, add in Funds page",
+    "guide.done": "🎉 All done today, take a break!",
+    "guide.loading": "🔄 Loading…", "guide.fail": "⚠️ Guide load failed",
+    "news.loading": "Loading…", "news.fail": "⚠️ News load failed",
+    "funds.loading": "Loading…", "funds.fail": "⚠️ Funds load failed",
+    "funds.chart": "Loading chart…", "funds.chart.fail": "Chart load failed",
+    "toast.saved": "Saved", "toast.added": "Added",
   },
 };
 
@@ -195,7 +235,7 @@ async function loadGuide(retry = true) {
     const actions = await api("/api/guide");
     document.getElementById("guide-count").textContent = actions.length ? `(${actions.length})` : "";
     if (!actions.length) {
-      listEl.innerHTML = '<li class="guide-item" style="border:none">🎉 今日行动全部完成，休息吧！</li>';
+      listEl.innerHTML = `<li class="guide-item" style="border:none">${t("guide.done")}</li>`;
       return;
     }
     listEl.innerHTML = actions
@@ -203,7 +243,7 @@ async function loadGuide(retry = true) {
       <li class="guide-item">
         <span class="guide-dot">${GUIDE_DOT[a.priority] || "🔵"}</span>
         <span class="guide-text">${escapeHtml(a.text)}</span>
-        <button class="btn-small ghost" data-guide-page="${a.page}" data-guide-target="${a.target}">去处理 →</button>
+        <button class="btn-small ghost" data-guide-page="${a.page}" data-guide-target="${a.target}">${t("btn.go")}</button>
       </li>`)
       .join("");
     // 一键跳转 + 聚焦
@@ -400,7 +440,7 @@ function renderPlan(items) {
   const listEl = document.getElementById("plan-list");
   document.getElementById("plan-count").textContent = items.length ? `(${items.length})` : "";
   if (!items.length) {
-    listEl.innerHTML = '<li class="plan-empty">✨ 今天还没有计划，先加一项吧</li>';
+    listEl.innerHTML = `<li class="plan-empty">${t("empty.plan")}</li>`;
     return;
   }
   // 重要任务排前面（未完成的在前）
@@ -611,11 +651,11 @@ document.getElementById("pomodoro-start").addEventListener("click", () => {
   if (pomodoroTimer) {
     clearInterval(pomodoroTimer);
     pomodoroTimer = null;
-    btn.textContent = "▶ 继续";
+    btn.textContent = t("pomodoro.resume");
     document.getElementById("pomodoro-status").textContent = "已暂停";
     return;
   }
-  btn.textContent = "⏸ 暂停";
+  btn.textContent = t("pomodoro.pause");
   document.getElementById("pomodoro-status").textContent = "专注中…";
   pomodoroTimer = setInterval(() => {
     pomodoroLeft -= 1;
@@ -623,8 +663,8 @@ document.getElementById("pomodoro-start").addEventListener("click", () => {
       clearInterval(pomodoroTimer);
       pomodoroTimer = null;
       pomodoroLeft = POMODORO_SECONDS;
-      btn.textContent = "▶ 开始";
-      document.getElementById("pomodoro-status").textContent = "🍅 完成！休息一下吧";
+      btn.textContent = t("pomodoro.start");
+      document.getElementById("pomodoro-status").textContent = t("pomodoro.done");
       playChime();
       return;
     }
@@ -638,7 +678,7 @@ document.getElementById("pomodoro-reset").addEventListener("click", () => {
     pomodoroTimer = null;
   }
   pomodoroLeft = POMODORO_SECONDS;
-  document.getElementById("pomodoro-start").textContent = "▶ 开始";
+  document.getElementById("pomodoro-start").textContent = t("pomodoro.start");
   document.getElementById("pomodoro-status").textContent = "";
   renderPomodoro();
 });
@@ -738,9 +778,9 @@ async function loadVocab() {
     });
     listEl.innerHTML = filtered.length
       ? filtered.map((w) => vocabItemHtml(w)).join("")
-      : '<li class="vocab-empty">没有匹配的生词</li>';
+      : `<li class="vocab-empty">${t("empty.vocab")}</li>`;
   } catch {
-    listEl.innerHTML = '<li class="vocab-empty">加载失败</li>';
+    listEl.innerHTML = `<li class="vocab-empty">${t("funds.fail")}</li>`;
   }
 }
 
@@ -778,8 +818,8 @@ async function loadVocabDue() {
             </div>
           </div>
           <div style="display:flex;gap:6px;margin-top:6px">
-            <button class="btn-small" data-review="${w.id}" data-known="true" title="认识，推进下一轮">✓ 认识</button>
-            <button class="btn-small ghost" data-review="${w.id}" data-known="false" title="不认识，重新开始">↺ 不认识</button>
+            <button class="btn-small" data-review="${w.id}" data-known="true" title="认识，推进下一轮">${t("btn.know")}</button>
+            <button class="btn-small ghost" data-review="${w.id}" data-known="false" title="不认识，重新开始">${t("btn.dont.know")}</button>
           </div>
         </li>`).join("")
       : '<li class="vocab-empty">今天没有到期的单词 🎉</li>';
@@ -899,7 +939,7 @@ function renderIdeasToday(items) {
         ${action}
       </li>`;
     }).join("")
-    : '<li class="vocab-empty">今日还没有灵感</li>';
+    : `<li class="vocab-empty">${t("empty.ideas")}</li>`;
 }
 
 function renderIdeasAll(all) {
@@ -915,7 +955,7 @@ function renderIdeasAll(all) {
         <span class="vocab-meaning" style="flex:1">${escapeHtml(i.text)}${i.note ? `<div class="muted-line">📝 ${escapeHtml(i.note)}</div>` : ""}</span>
         <span class="vocab-stage">${i.status === "kept" ? "🔖 收藏" : i.status === "done" ? "✅ 已采用" : "🗑 已丢弃"}</span>
       </li>`).join("")
-    : '<li class="vocab-empty">没有匹配的灵感</li>';
+    : `<li class="vocab-empty">${t("empty.ideas.all")}</li>`;
 }
 
 // 历史筛选
@@ -1225,12 +1265,12 @@ let newsTab = "ai";
 
 async function loadNews(refresh = false) {
   const listEl = document.getElementById("news-list");
-  listEl.innerHTML = '<li class="news-item" style="justify-content:center;color:var(--muted)">加载中…</li>';
+  listEl.innerHTML = `<li class="news-item" style="justify-content:center;color:var(--muted)">${t("news.loading")}</li>`;
   try {
     const data = await api(`/api/news?tab=${newsTab}${refresh ? "&refresh=1" : ""}`);
     renderNews(data);
   } catch {
-    listEl.innerHTML = '<li class="news-item" style="justify-content:center;color:var(--muted)">⚠️ 新闻加载失败</li>';
+    listEl.innerHTML = `<li class="news-item" style="justify-content:center;color:var(--muted)">${t("news.fail")}</li>`;
   }
   loadNewsHealth();
 }
@@ -1264,10 +1304,10 @@ function renderNews(data) {
   listEl.innerHTML = `
     <li class="news-meta">
       <span class="news-updated">🕐 更新于 ${escapeHtml(data.fetched_at || "—")}</span>
-      <button class="btn-small ghost news-refresh" title="手动刷新">🔄 刷新</button>
+      <button class="btn-small ghost news-refresh" title="手动刷新">${t("btn.refresh")}</button>
     </li>`;
   if (!data.items.length) {
-    listEl.innerHTML += '<li class="news-item" style="justify-content:center;color:var(--muted)">暂无新闻</li>';
+    listEl.innerHTML += `<li class="news-item" style="justify-content:center;color:var(--muted)">${t("empty.news")}</li>`;
     return;
   }
   listEl.innerHTML += data.items
@@ -1293,12 +1333,12 @@ document.getElementById("news-tabs").addEventListener("click", (e) => {
 // ── 基金涨跌 ──
 async function loadFunds() {
   const body = document.getElementById("funds-body");
-  body.innerHTML = "加载中…";
+  body.innerHTML = t("funds.loading");
   try {
     const data = await api("/api/funds");
     renderFunds(data);
   } catch {
-    body.innerHTML = "⚠️ 基金数据加载失败";
+    body.innerHTML = t("funds.fail");
   }
 }
 
@@ -1306,7 +1346,7 @@ function renderFunds(data) {
   const body = document.getElementById("funds-body");
   document.getElementById("funds-updated").textContent = `更新 ${data.ts}`;
   if (!data.funds.length) {
-    body.innerHTML = "暂无关注基金，去工具页添加";
+    body.innerHTML = t("empty.funds");
     return;
   }
   body.innerHTML = data.funds

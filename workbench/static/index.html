@@ -154,8 +154,8 @@
           <div class="card-title"><span class="card-badge">🍅</span><span data-i18n="card.pomodoro">番茄钟</span></div>
           <div class="pomodoro-time" id="pomodoro-time">25:00</div>
           <div style="display:flex;gap:8px;justify-content:center;margin-top:10px">
-            <button class="btn-small" id="pomodoro-start">▶ 开始</button>
-            <button class="btn-small ghost" id="pomodoro-reset">↺ 重置</button>
+            <button class="btn-small" id="pomodoro-start" data-i18n="pomodoro.start">▶ 开始</button>
+            <button class="btn-small ghost" id="pomodoro-reset" data-i18n="pomodoro.reset">↺ 重置</button>
           </div>
           <div id="pomodoro-status" class="muted-line" style="text-align:center;margin-top:8px"></div>
         </div>
@@ -201,7 +201,7 @@
         <div class="card">
           <div class="card-title"><span class="card-badge">⚡</span><span data-i18n="card.template">雅思任务模板</span></div>
           <div class="sub-hint">一键把常用任务加进今日计划</div>
-          <button class="btn-small" id="ielts-template-btn" style="width:100%">📋 添加今日雅思任务</button>
+          <button class="btn-small" id="ielts-template-btn" data-i18n="btn.template" style="width:100%">📋 添加今日雅思任务</button>
           <div id="ielts-template-status" class="muted-line" style="margin-top:8px"></div>
         </div>
         <div class="card card-wide">
@@ -231,7 +231,7 @@
           <div id="ideas-ai-status" class="muted-line" style="margin-bottom:8px"></div>
           <ul class="vocab-list" id="ideas-today-list"></ul>
           <div style="display:flex;gap:8px;margin-top:10px">
-            <button class="btn-small" id="ideas-generate-btn">🎲 换一批</button>
+            <button class="btn-small" id="ideas-generate-btn" data-i18n="btn.regenerate">🎲 换一批</button>
             <button class="btn-small" id="ideas-ai-fallback" style="display:none">重新连接 AI</button>
           </div>
         </div>
@@ -270,9 +270,9 @@
           </div>
           <textarea class="review-textarea" id="review-summary" rows="5" placeholder="今天完成了什么？有什么收获？明天做什么？"></textarea>
           <div style="display:flex;gap:8px;margin-top:10px">
-            <button class="btn-small" id="review-ai-btn">🤖 AI 起草</button>
-            <button class="btn-small" id="review-save-btn">💾 保存</button>
-            <button class="btn-small ghost" id="review-obsidian-btn">📓 同步到 Obsidian 日记</button>
+            <button class="btn-small" id="review-ai-btn" data-i18n="btn.ai.draft">🤖 AI 起草</button>
+            <button class="btn-small" id="review-save-btn" data-i18n="btn.save">💾 保存</button>
+            <button class="btn-small ghost" id="review-obsidian-btn" data-i18n="btn.sync.obsidian">📓 同步到 Obsidian 日记</button>
           </div>
           <div id="review-obsidian-status" class="muted-line" style="margin-top:6px"></div>
         </div>
@@ -281,8 +281,8 @@
           <div class="sub-hint">聚合本周计划与总结，AI 生成周报</div>
           <textarea class="review-textarea" id="weekly-summary" rows="5" placeholder="本周还没生成周报，点击 AI 生成…"></textarea>
           <div style="display:flex;gap:8px;margin-top:10px">
-            <button class="btn-small" id="weekly-ai-btn">🤖 AI 生成</button>
-            <button class="btn-small" id="weekly-save-btn">💾 保存</button>
+            <button class="btn-small" id="weekly-ai-btn" data-i18n="btn.ai.weekly">🤖 AI 生成</button>
+            <button class="btn-small" id="weekly-save-btn" data-i18n="btn.save">💾 保存</button>
           </div>
         </div>
         <div class="card card-wide">
@@ -350,7 +350,7 @@
           <div class="sub-hint">添加基金代码自动识别名称</div>
           <div class="set-row" style="margin-top:8px">
             <input class="plan-input" id="set-fund" type="text" placeholder="6位代码，如 000961" autocomplete="off">
-            <button class="btn-small" id="set-fund-add-btn">➕ 添加</button>
+            <button class="btn-small" id="set-fund-add-btn" data-i18n="btn.add.fund">➕ 添加</button>
           </div>
           <div id="set-fund-list" class="set-fund-list" style="margin-top:8px"></div>
         </div>
