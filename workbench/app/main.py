@@ -12,10 +12,12 @@ from pydantic import BaseModel
 
 from . import config as config_mod
 from . import deepseek
+from . import exam as exam_mod
 from . import funds as funds_mod
 from . import guide as guide_mod
 from . import ideas as ideas_mod
 from . import ielts as ielts_mod
+from . import ielts_ai as ielts_ai_mod
 from . import links as links_mod
 from . import news as news_mod
 from . import obsidian as obsidian_mod
@@ -119,6 +121,35 @@ class LinkPatch(BaseModel):
 
 class FundIn(BaseModel):
     code: str
+
+
+class EssayIn(BaseModel):
+    essay: str
+    topic: str = ""
+
+
+class SpeakingIn(BaseModel):
+    topic: str
+    answers: str = ""
+
+
+class ProgressIn(BaseModel):
+    module: str
+    done: bool
+
+
+class ExamDateIn(BaseModel):
+    date: str
+
+
+class ExamModuleIn(BaseModel):
+    module: str
+
+
+class ExamCheckIn(BaseModel):
+    module: str
+    question: str
+    user_answer: str
 
 
 # ── 今日计划 ───────────────────────────────────────────────
@@ -228,6 +259,37 @@ def api_patch_ielts(body: IeltsPatch):
     return ielts_mod.update_ielts(body.model_dump(exclude_none=True))
 
 
+# ── 雅思 AI 练习 ───────────────────────────────────────────
+@app.post("/api/ielts/essay-review")
+def api_essay_review(body: EssayIn):
+    try:
+        return ielts_ai_mod.essay_review(body.essay, body.topic)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except deepseek.AIError as e:
+        raise HTTPException(503, {"reason": e.reason})
+
+
+@app.get("/api/ielts/speaking-topics")
+def api_speaking_topics():
+    return {"topics": ielts_ai_mod.SPEAKING_TOPICS}
+
+
+@app.post("/api/ielts/speaking-questions")
+def api_speaking_questions(body: SpeakingIn):
+    return ielts_ai_mod.speaking_questions(body.topic)
+
+
+@app.post("/api/ielts/speaking-review")
+def api_speaking_review(body: SpeakingIn):
+    try:
+        return ielts_ai_mod.speaking_review(body.topic, body.answers)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except deepseek.AIError as e:
+        raise HTTPException(503, {"reason": e.reason})
+
+
 # ── 生词本 ─────────────────────────────────────────────────
 # 注意：/api/vocab/due 必须注册在 /api/vocab/{word_id} 之前，
 # 否则 FastAPI 会把 "due" 当成 word_id 匹配
@@ -244,6 +306,12 @@ def api_due_vocab():
 @app.post("/api/vocab")
 def api_add_vocab(body: VocabIn):
     return vocab_mod.add_word(body.word, body.meaning)
+
+
+@app.post("/api/vocab/import-builtin")
+def api_import_builtin():
+    """一键导入内置雅思词库。"""
+    return {"added": vocab_mod.import_builtin()}
 
 
 @app.patch("/api/vocab/{word_id}")
@@ -460,6 +528,50 @@ def api_export():
 @app.get("/api/stats")
 def api_stats():
     return stats_mod.build_stats()
+
+
+# ── 考公 ───────────────────────────────────────────────────
+@app.get("/api/exam/info")
+def api_exam_info():
+    return exam_mod.EXAM_INFO
+
+
+@app.get("/api/exam/progress")
+def api_exam_progress():
+    return exam_mod.get_progress()
+
+
+@app.post("/api/exam/progress")
+def api_exam_set_progress(body: ProgressIn):
+    return exam_mod.set_progress(body.module, body.done)
+
+
+@app.post("/api/exam/date")
+def api_exam_date(body: ExamDateIn):
+    return exam_mod.set_exam_date(body.date)
+
+
+@app.get("/api/exam/countdown")
+def api_exam_countdown():
+    return {"days": exam_mod.days_until_exam()}
+
+
+@app.post("/api/exam/generate")
+def api_exam_generate(body: ExamModuleIn):
+    try:
+        return exam_mod.ai_generate_question(body.module)
+    except deepseek.AIError as e:
+        raise HTTPException(503, {"reason": e.reason})
+
+
+@app.post("/api/exam/check")
+def api_exam_check(body: ExamCheckIn):
+    try:
+        return exam_mod.ai_check_answer(body.module, body.question, body.user_answer)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except deepseek.AIError as e:
+        raise HTTPException(503, {"reason": e.reason})
 
 
 # ── 新闻简讯 ───────────────────────────────────────────────

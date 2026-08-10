@@ -34,6 +34,7 @@
       <div class="nav-group-title" data-i18n="nav.group.study">📖 学习</div>
       <a class="nav-item" data-page="study" href="#/study"><span class="nav-ico">📚</span><span data-i18n="nav.study">学习</span></a>
       <a class="nav-item" data-page="ielts" href="#/ielts"><span class="nav-ico">🎯</span><span data-i18n="nav.ielts">雅思</span></a>
+      <a class="nav-item" data-page="exam" href="#/exam"><span class="nav-ico">🎓</span><span data-i18n="nav.exam">考公</span></a>
     </div>
 
     <div class="nav-group">
@@ -205,7 +206,9 @@
           <div id="ielts-template-status" class="muted-line" style="margin-top:8px"></div>
         </div>
         <div class="card card-wide">
-          <div class="card-title"><span class="card-badge">📖</span><span data-i18n="card.vocab">生词本</span> <span class="plan-count" id="vocab-stats"></span></div>
+          <div class="card-title"><span class="card-badge">📖</span><span data-i18n="card.vocab">生词本</span> <span class="plan-count" id="vocab-stats"></span>
+            <button class="btn-small ghost" id="vocab-import-btn" style="margin-left:auto">📥 一键导入内置词库</button>
+          </div>
           <form class="plan-form" id="vocab-form">
             <input class="plan-input" id="vocab-word" type="text" placeholder="单词" autocomplete="off">
             <input class="plan-input" id="vocab-meaning" type="text" placeholder="释义，如：v. 放弃" autocomplete="off">
@@ -218,6 +221,34 @@
             <button class="btn-small ghost vocab-filter" data-filter="done">已毕业</button>
           </div>
           <ul class="vocab-list" id="vocab-list"></ul>
+        </div>
+        <div class="card card-wide">
+          <div class="card-title"><span class="card-badge">✍️</span>AI 作文批改</div>
+          <div class="sub-hint">写雅思作文 → AI 按四项标准打分 + 建议</div>
+          <input class="plan-input" id="essay-topic" type="text" placeholder="题目（可留空）" autocomplete="off" style="margin-bottom:6px">
+          <textarea class="review-textarea" id="essay-text" rows="6" placeholder="把你的作文粘贴或写在这里…"></textarea>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn-small" id="essay-review-btn">🤖 批改</button>
+          </div>
+          <div id="essay-result" class="card-body" style="margin-top:8px;white-space:pre-wrap;font-size:13px"></div>
+        </div>
+        <div class="card card-wide">
+          <div class="card-title"><span class="card-badge">🗣</span>AI 口语模拟考官</div>
+          <div class="sub-hint">选话题 → AI 考官出 3 题 → 作答 → AI 点评</div>
+          <select class="plan-input" id="speaking-topic" style="margin-bottom:6px"></select>
+          <button class="btn-small" id="speaking-start-btn">🎤 开始模拟</button>
+          <div id="speaking-questions" class="card-body" style="margin-top:8px;font-size:13px"></div>
+          <textarea class="review-textarea" id="speaking-answers" rows="4" placeholder="把 3 个问题的回答写在这里…" style="margin-top:8px"></textarea>
+          <button class="btn-small" id="speaking-review-btn" style="margin-top:8px">🤖 AI 点评</button>
+          <div id="speaking-result" class="card-body" style="margin-top:8px;white-space:pre-wrap;font-size:13px"></div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="card-badge">🎧</span>听力练习入口</div>
+          <div class="sub-hint">免费雅思听力资源</div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+            <a class="btn-small" href="https://www.bbc.co.uk/learningenglish/english/features/6-minute-english" target="_blank" rel="noopener" style="text-align:center">BBC 6 Minute English</a>
+            <a class="btn-small ghost" href="https://www.ted.com/podcasts/ielts" target="_blank" rel="noopener" style="text-align:center">TED IELTS</a>
+          </div>
         </div>
       </div>
     </section>
@@ -353,6 +384,41 @@
             <button class="btn-small" id="set-fund-add-btn" data-i18n="btn.add.fund">➕ 添加</button>
           </div>
           <div id="set-fund-list" class="set-fund-list" style="margin-top:8px"></div>
+        </div>
+      </div>
+    </section>
+    <section class="page" id="page-exam">
+      <div class="page-head">
+        <h1 data-i18n="page.exam">🎓 考公</h1>
+        <p class="page-sub" id="exam-countdown"></p>
+      </div>
+      <div class="grid">
+        <div class="card">
+          <div class="card-title"><span class="card-badge">⏳</span>考试倒计时</div>
+          <div class="pomodoro-time" id="exam-days">未设置</div>
+          <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+            <input class="plan-input" id="exam-date" type="date" style="flex:1">
+            <button class="btn-small" id="exam-date-btn">设置</button>
+          </div>
+          <div class="muted-line" style="margin-top:6px">广东：公告 1 月 / 笔试 3 月 / 面试 4-5 月</div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="card-badge">✅</span>科目进度</div>
+          <ul class="stage-list" id="exam-progress-list"></ul>
+        </div>
+        <div class="card card-wide">
+          <div class="card-title"><span class="card-badge">📋</span>考情速览</div>
+          <div id="exam-info" class="card-body"></div>
+        </div>
+        <div class="card card-wide">
+          <div class="card-title"><span class="card-badge">🧮</span>AI 每日一练</div>
+          <div class="sub-hint">选模块 → AI 出题 → 作答 → AI 判题解析</div>
+          <select class="plan-input" id="exam-module" style="margin-bottom:6px"></select>
+          <button class="btn-small" id="exam-generate-btn">🎯 出题</button>
+          <div id="exam-question" class="card-body" style="margin-top:8px;white-space:pre-wrap;font-size:13px"></div>
+          <textarea class="review-textarea" id="exam-answer" rows="2" placeholder="写下你的答案…" style="margin-top:8px"></textarea>
+          <button class="btn-small" id="exam-check-btn" style="margin-top:8px">🤖 判题</button>
+          <div id="exam-result" class="card-body" style="margin-top:8px;white-space:pre-wrap;font-size:13px"></div>
         </div>
       </div>
     </section>

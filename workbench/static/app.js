@@ -14,10 +14,10 @@ const I18N = {
     "nav.group.sys": "⚙️ 系统",
     "nav.home": "首页", "nav.study": "学习", "nav.ielts": "雅思", "nav.ideas": "灵感",
     "nav.review": "复盘", "nav.stats": "统计", "nav.tools": "工具",
-    "nav.news": "资讯", "nav.funds": "基金",
+    "nav.news": "资讯", "nav.funds": "基金", "nav.exam": "考公",
     "page.study": "📚 学习", "page.ielts": "🎯 雅思", "page.ideas": "💡 灵感",
     "page.review": "📝 复盘", "page.stats": "📊 统计", "page.tools": "🛠 工具",
-    "page.news": "📰 资讯", "page.funds": "💰 基金涨跌",
+    "page.news": "📰 资讯", "page.funds": "💰 基金涨跌", "page.exam": "🎓 考公",
     "guide.title": "今日行动",
     "card.plan": "今日计划", "card.progress": "学习进度", "card.ielts": "雅思速览",
     "card.ideas": "今日灵感", "card.review": "内容复盘", "card.links": "资源收藏",
@@ -59,10 +59,10 @@ const I18N = {
     "nav.group.sys": "⚙️ SYSTEM",
     "nav.home": "Home", "nav.study": "Study", "nav.ielts": "IELTS", "nav.ideas": "Ideas",
     "nav.review": "Review", "nav.stats": "Stats", "nav.tools": "Tools",
-    "nav.news": "News", "nav.funds": "Funds",
+    "nav.news": "News", "nav.funds": "Funds", "nav.exam": "Exam",
     "page.study": "📚 Study", "page.ielts": "🎯 IELTS", "page.ideas": "💡 Ideas",
     "page.review": "📝 Review", "page.stats": "📊 Stats", "page.tools": "🛠 Tools",
-    "page.news": "📰 News", "page.funds": "💰 Funds",
+    "page.news": "📰 News", "page.funds": "💰 Funds", "page.exam": "🎓 Exam",
     "guide.title": "Today's Plan",
     "card.plan": "Today's Plan", "card.progress": "Study Progress", "card.ielts": "IELTS",
     "card.ideas": "Today's Ideas", "card.review": "Review", "card.links": "Bookmarks",
@@ -136,7 +136,7 @@ async function api(path, options = {}) {
 }
 
 // ── hash 路由 ──
-const PAGES = ["home", "study", "ielts", "ideas", "review", "stats", "news", "funds", "tools"];
+const PAGES = ["home", "study", "ielts", "ideas", "review", "stats", "news", "funds", "exam", "tools"];
 
 function navigate() {
   const hash = location.hash.replace(/^#\//, "") || "home";
@@ -153,6 +153,7 @@ function navigate() {
   if (page === "stats") loadStatsPage();
   if (page === "news") loadNews();
   if (page === "funds") { loadFunds(); loadFundManager(); }
+  if (page === "exam") loadExamPage();
   if (page === "tools") loadToolsPage();
 }
 
@@ -688,7 +689,202 @@ async function loadIeltsPage() {
   loadIeltsBoard();
   loadVocab();
   loadVocabDue();
+  loadSpeakingTopics();
 }
+
+// 一键导入内置词库
+document.getElementById("vocab-import-btn").addEventListener("click", async () => {
+  const btn = document.getElementById("vocab-import-btn");
+  btn.textContent = "导入中…";
+  btn.disabled = true;
+  try {
+    const r = await api("/api/vocab/import-builtin", { method: "POST" });
+    toast(r.added > 0 ? `📥 已导入 ${r.added} 个词（进入艾宾浩斯复习）` : "词库已全部导入过了");
+  } catch {
+    toast("❌ 导入失败");
+  }
+  btn.textContent = "📥 一键导入内置词库";
+  btn.disabled = false;
+  loadVocab();
+  loadVocabDue();
+});
+
+// AI 作文批改
+document.getElementById("essay-review-btn").addEventListener("click", async () => {
+  const essay = document.getElementById("essay-text").value.trim();
+  const topic = document.getElementById("essay-topic").value.trim();
+  const out = document.getElementById("essay-result");
+  if (!essay) {
+    toast("请先写作文");
+    return;
+  }
+  out.textContent = "🤖 批改中…";
+  try {
+    const r = await api("/api/ielts/essay-review", { method: "POST", body: JSON.stringify({ essay, topic }) });
+    out.textContent = r.review;
+  } catch {
+    out.textContent = "❌ AI 批改失败（未配置 key 或网络问题）";
+  }
+});
+
+// AI 口语模拟
+async function loadSpeakingTopics() {
+  try {
+    const r = await api("/api/ielts/speaking-topics");
+    document.getElementById("speaking-topic").innerHTML = r.topics
+      .map((t) => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
+  } catch { /* 保持空 */ }
+}
+
+document.getElementById("speaking-start-btn").addEventListener("click", async () => {
+  const topic = document.getElementById("speaking-topic").value;
+  const out = document.getElementById("speaking-questions");
+  out.textContent = "🎤 考官出题中…";
+  try {
+    const r = await api("/api/ielts/speaking-questions", { method: "POST", body: JSON.stringify({ topic }) });
+    out.innerHTML = r.questions
+      .map((q, i) => `<div class="home-idea">${i + 1}. ${escapeHtml(q)}</div>`).join("");
+    toast("回答完 3 题后点「AI 点评」");
+  } catch {
+    out.textContent = "❌ 出题失败";
+  }
+});
+
+document.getElementById("speaking-review-btn").addEventListener("click", async () => {
+  const topic = document.getElementById("speaking-topic").value;
+  const answers = document.getElementById("speaking-answers").value.trim();
+  const out = document.getElementById("speaking-result");
+  if (!answers) {
+    toast("请先写下你的回答");
+    return;
+  }
+  out.textContent = "🤖 点评中…";
+  try {
+    const r = await api("/api/ielts/speaking-review", { method: "POST", body: JSON.stringify({ topic, answers }) });
+    out.textContent = r.review;
+  } catch {
+    out.textContent = "❌ AI 点评失败";
+  }
+});
+
+// ── 考公页 ──
+async function loadExamPage() {
+  loadExamCountdown();
+  loadExamProgress();
+  loadExamInfo();
+  loadExamModules();
+}
+
+async function loadExamCountdown() {
+  try {
+    const r = await api("/api/exam/countdown");
+    const el = document.getElementById("exam-days");
+    if (r.days === null) {
+      el.textContent = "未设置考试日期";
+    } else {
+      el.textContent = r.days >= 0 ? `⏳ 还有 ${r.days} 天` : `已过 ${-r.days} 天`;
+    }
+  } catch { /* 保持 */ }
+}
+
+document.getElementById("exam-date-btn").addEventListener("click", async () => {
+  const date = document.getElementById("exam-date").value;
+  if (!date) return;
+  try {
+    await api("/api/exam/date", { method: "POST", body: JSON.stringify({ date }) });
+    toast("✅ 考试日期已设置");
+    loadExamCountdown();
+  } catch {
+    toast("❌ 设置失败");
+  }
+});
+
+async function loadExamProgress() {
+  const el = document.getElementById("exam-progress-list");
+  try {
+    const p = await api("/api/exam/progress");
+    const modules = ["政治理论", "常识应用", "数量关系", "判断推理", "科学推理", "资料分析", "申论小题"];
+    el.innerHTML = modules
+      .map((m) => `
+        <li class="stage-item ${p.progress[m] ? "done" : ""}" style="cursor:pointer">
+          <button class="plan-check ${p.progress[m] ? "checked" : ""}" data-exam-module="${escapeHtml(m)}">✓</button>
+          <span class="stage-text">${escapeHtml(m)}</span>
+        </li>`)
+      .join("");
+  } catch {
+    el.innerHTML = '<li class="vocab-empty">加载失败</li>';
+  }
+}
+
+document.getElementById("exam-progress-list").addEventListener("click", async (e) => {
+  const btn = e.target.closest("[data-exam-module]");
+  if (!btn) return;
+  try {
+    await api("/api/exam/progress", {
+      method: "POST",
+      body: JSON.stringify({ module: btn.dataset.examModule, done: !btn.classList.contains("checked") }),
+    });
+  } catch { /* 兜底 */ }
+  loadExamProgress();
+});
+
+async function loadExamInfo() {
+  const el = document.getElementById("exam-info");
+  try {
+    const info = await api("/api/exam/info");
+    const section = (t) => `
+      <div class="muted-line" style="font-weight:700;margin:10px 0 4px">${escapeHtml(t.title)}</div>
+      ${t.types ? t.types.map((x) => `<div class="home-idea">▸ ${escapeHtml(x.name)}：${escapeHtml(x.subjects)}</div>`).join("")
+        : t.modules ? t.modules.map((x) => `<div class="home-idea">▸ ${escapeHtml(x.name)}（${x.count} 题）：${escapeHtml(x.note)}</div>`).join("")
+        : t.notes ? t.notes.map((x) => `<div class="home-idea">▸ ${escapeHtml(x.name)}：${escapeHtml(x.note)}</div>`).join("")
+        : ""}`;
+    el.innerHTML = section(info.province) + section(info.xingce) + section(info.shenlun) + section(info.state) +
+      `<div class="muted-line" style="margin-top:8px">▸ ${escapeHtml(info.state.key_enterprises)}</div>` +
+      `<div class="muted-line" style="margin-top:6px">${escapeHtml(info.province.timeline)}</div>`;
+  } catch {
+    el.innerHTML = '<div class="placeholder">考情加载失败</div>';
+  }
+}
+
+async function loadExamModules() {
+  try {
+    const modules = ["政治理论", "常识应用", "数量关系", "判断推理", "科学推理", "资料分析", "申论小题"];
+    document.getElementById("exam-module").innerHTML = modules
+      .map((m) => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join("");
+  } catch { /* 保持 */ }
+}
+
+document.getElementById("exam-generate-btn").addEventListener("click", async () => {
+  const module = document.getElementById("exam-module").value;
+  const out = document.getElementById("exam-question");
+  out.textContent = "🎯 出题中…";
+  document.getElementById("exam-answer").value = "";
+  document.getElementById("exam-result").textContent = "";
+  try {
+    const r = await api("/api/exam/generate", { method: "POST", body: JSON.stringify({ module }) });
+    out.textContent = r.content;
+  } catch {
+    out.textContent = "❌ 出题失败（AI 不可用）";
+  }
+});
+
+document.getElementById("exam-check-btn").addEventListener("click", async () => {
+  const module = document.getElementById("exam-module").value;
+  const question = document.getElementById("exam-question").textContent;
+  const userAnswer = document.getElementById("exam-answer").value.trim();
+  const out = document.getElementById("exam-result");
+  if (!userAnswer) {
+    toast("请先写下答案");
+    return;
+  }
+  out.textContent = "🤖 判题中…";
+  try {
+    const r = await api("/api/exam/check", { method: "POST", body: JSON.stringify({ module, question, user_answer: userAnswer }) });
+    out.textContent = r.result;
+  } catch {
+    out.textContent = "❌ 判题失败";
+  }
+});
 
 async function loadIeltsBoard() {
   const el = document.getElementById("ielts-board-body");
