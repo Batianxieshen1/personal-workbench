@@ -487,6 +487,16 @@ body {
   margin-bottom: 6px;
 }
 .news-updated { font-size: 12px; color: var(--muted); }
+.news-health { display: flex; gap: 8px; padding: 2px 8px 10px; flex-wrap: wrap; }
+.health-dot {
+  font-size: 11px; padding: 1px 8px; border-radius: 20px;
+  background: var(--bg); border: 1px solid var(--card-border);
+  cursor: help;
+}
+.health-dot::before { content: "● "; }
+.health-ok { color: #1e8449; border-color: rgba(30, 132, 73, 0.35); }
+.health-bad { color: #c0392b; border-color: rgba(192, 57, 43, 0.35); }
+.health-unknown { color: var(--muted); }
 
 /* ═══ 基金涨跌 ═══ */
 .funds-row {

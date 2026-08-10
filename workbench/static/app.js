@@ -1232,6 +1232,31 @@ async function loadNews(refresh = false) {
   } catch {
     listEl.innerHTML = '<li class="news-item" style="justify-content:center;color:var(--muted)">⚠️ 新闻加载失败</li>';
   }
+  loadNewsHealth();
+}
+
+// 资讯源健康状态：每个源一个小圆点（绿=正常，红=失败）
+async function loadNewsHealth() {
+  const el = document.getElementById("news-health");
+  if (!el) return;
+  try {
+    const health = await api("/api/news/health");
+    const names = {
+      "ai": ["aihot"],
+      "domestic": ["百度热搜", "今日头条", "IT之家"],
+      "global": ["BBC中文", "Hacker News", "TechCrunch"],
+    }[newsTab] || [];
+    el.innerHTML = names
+      .map((n) => {
+        const h = health[n];
+        const cls = h ? (h.ok ? "health-ok" : "health-bad") : "health-unknown";
+        const title = h ? `${n}：${h.ok ? "正常" : `失败 ${h.fails} 次 · ${h.last_at}`}` : `${n}：未检测`;
+        return `<span class="health-dot ${cls}" title="${title}">${escapeHtml(n)}</span>`;
+      })
+      .join("");
+  } catch {
+    el.innerHTML = "";
+  }
 }
 
 function renderNews(data) {

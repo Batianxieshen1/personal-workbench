@@ -2,13 +2,14 @@
 
 数据源（全部免费公开，已实测）：
 - AI 最新：aihot REST API v1（匿名免 Key，中文摘要）
-- 国内：IT之家 RSS + B站热门 API
+- 国内：百度热搜（综合）+ 今日头条热榜（时政社会）+ IT之家（科技）
 - 国外：Hacker News Algolia API + BBC 中文 RSS + TechCrunch AI RSS
 
 设计要点：
 - 统一输出 [{title, source, url, time}]，前端按板块取
 - 1 小时内存缓存（各自独立），外部源失败时降级返回 error 标记，不阻塞
-- 所有拉取带 UA，超时 10 秒
+- 源健康度：每次拉取记录各源成功/失败，/api/news/health 可查
+- 多源并发拉取 + 每源限 6 条防挤占（AI 板块单源拿满）
 """
 import datetime as dt
 import re
@@ -22,8 +23,7 @@ UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
 
 AIHOT_URL = "https://aihot.virxact.com/api/v1/items?mode=selected&window=24h&limit=20"
 IT_HOME_RSS = "https://www.ithome.com/rss/"
-BILI_HOT = "https://api.bilibili.com/x/web-interface/ranking/v2?rid=0"
-KR36_RSS = "https://36kr.com/feed"
+TOUTIAO_HOT = "https://www.toutiao.com/hot-event/hot-board/?origin=toutiao_pc"
 BAIDU_HOT = "https://top.baidu.com/api/board?platform=wise&tab=realtime"
 HN_API = "https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=15"
 BBC_RSS = "https://feeds.bbci.co.uk/zhongwen/simp/rss.xml"
@@ -33,6 +33,22 @@ CACHE_TTL = 3600  # 1 小时
 
 _cache: dict[str, dict] = {}
 _lock = threading.Lock()
+# 源健康度：{源名: {"ok": bool, "fails": 连续失败次数, "last_at": 最近检查时间}}
+_health: dict[str, dict] = {}
+
+
+def _mark(name: str, ok: bool) -> None:
+    with _lock:
+        h = _health.setdefault(name, {"ok": True, "fails": 0, "last_at": ""})
+        h["ok"] = ok
+        h["fails"] = h["fails"] + 1 if not ok else 0
+        h["last_at"] = dt.datetime.now().strftime("%m-%d %H:%M")
+
+
+def get_health() -> dict:
+    """各源健康状态（供前端展示）。"""
+    with _lock:
+        return {k: dict(v) for k, v in _health.items()}
 
 
 def _get(url: str, timeout: float = 10.0) -> requests.Response:
@@ -115,8 +131,8 @@ def _sources(tab: str) -> list:
         return [("aihot", fetch_aihot)]
     if tab == "domestic":
         return [("百度热搜", fetch_baidu),
-                ("IT之家", lambda: fetch_rss(IT_HOME_RSS, "IT之家")),
-                ("B站", fetch_bili)]
+                ("今日头条", fetch_toutiao),
+                ("IT之家", lambda: fetch_rss(IT_HOME_RSS, "IT之家"))]
     return [("BBC中文", lambda: fetch_rss(BBC_RSS, "BBC中文")),
             ("Hacker News", fetch_hn),
             ("TechCrunch", lambda: fetch_rss(TECHCRUNCH_RSS, "TechCrunch"))]
@@ -144,6 +160,22 @@ def fetch_baidu() -> list:
     return items[:15]
 
 
+def fetch_toutiao() -> list:
+    """今日头条热榜（时政/社会/民生，较正式）。"""
+    data = _get(TOUTIAO_HOT).json()
+    items = []
+    for it in (data.get("data") or []):
+        title = it.get("Title") or it.get("title")
+        if title:
+            items.append({
+                "title": title,
+                "source": "今日头条",
+                "url": it.get("Url") or it.get("url", ""),
+                "time": "",
+            })
+    return items[:15]
+
+
 def get_news(tab: str = "ai", refresh: bool = False) -> dict:
     """拉取板块新闻（带 1 小时缓存，单源失败不影响其他源）。
 
@@ -164,8 +196,11 @@ def get_news(tab: str = "ai", refresh: bool = False) -> dict:
     def _fetch_one(spec):
         name, fetcher = spec
         try:
-            return (fetcher() if single else fetcher()[:6]), True
+            result = (fetcher() if single else fetcher()[:6]), True
+            _mark(name, True)
+            return result
         except Exception:
+            _mark(name, False)
             return [], False
 
     # 多源并发拉取（串行 6 秒 → 并行 2 秒）

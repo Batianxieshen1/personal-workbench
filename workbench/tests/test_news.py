@@ -2,7 +2,15 @@
 import datetime as dt
 import time
 
+import pytest
+
 from app import news, storage
+
+
+@pytest.fixture(autouse=True)
+def _clear_health():
+    """_health 是模块级共享的，每个测试前清空防止相互污染。"""
+    news._health.clear()
 
 AIHOT_SAMPLE = {
     "items": [
@@ -112,3 +120,44 @@ class _FakeResp:
 
     def raise_for_status(self):
         pass
+
+
+TOUTIAO_SAMPLE = {"data": [
+    {"Title": "外交部：藏南地区是中国领土", "Url": "https://www.toutiao.com/trending/1"},
+    {"Title": "台风最新路径", "Url": "https://www.toutiao.com/trending/2"},
+]}
+
+
+def test_parse_toutiao(monkeypatch, tmp_path):
+    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
+    monkeypatch.setattr(news.requests, "get",
+                        lambda url, timeout=10, headers=None: _FakeResp(TOUTIAO_SAMPLE))
+    items = news.fetch_toutiao()
+    assert len(items) == 2
+    assert items[0]["title"] == "外交部：藏南地区是中国领土"
+    assert items[0]["source"] == "今日头条"
+
+
+def test_health_tracked(monkeypatch, tmp_path):
+    """拉取后健康度记录各源成功/失败状态。"""
+    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
+
+    def flaky(url, timeout=10, headers=None):
+        if "toutiao" in url:
+            raise RuntimeError("头条挂了")
+        return _FakeResp(TOUTIAO_SAMPLE)
+
+    monkeypatch.setattr(news.requests, "get", flaky)
+    news.get_news("domestic", refresh=True)
+    health = news.get_health()
+    assert isinstance(health, dict)
+    assert any(v.get("ok") is False for v in health.values())
+
+
+def test_health_ok_after_success(monkeypatch, tmp_path):
+    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
+    monkeypatch.setattr(news.requests, "get",
+                        lambda url, timeout=10, headers=None: _FakeResp(TOUTIAO_SAMPLE))
+    news.get_news("ai", refresh=True)
+    health = news.get_health()
+    assert all(v.get("ok") is True for v in health.values())

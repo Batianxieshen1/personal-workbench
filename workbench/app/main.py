@@ -468,6 +468,12 @@ def api_news(tab: str = "ai", refresh: bool = False):
     return news_mod.get_news(tab, refresh=refresh)
 
 
+@app.get("/api/news/health")
+def api_news_health():
+    """各资讯源健康状态（绿=正常，红=失败）。"""
+    return news_mod.get_health()
+
+
 # ── 基金涨跌 ───────────────────────────────────────────────
 @app.get("/api/funds")
 def api_funds():
