@@ -25,6 +25,46 @@ from . import storage
 REVIEW_INTERVALS = [1, 3, 7, 14, 30]
 VOCAB_FILE = "vocab.json"
 
+# ── 内置雅思高频词库（按主题分组，一键导入免手动录入） ──
+BUILTIN_WORDS = {
+    "教育": [
+        ("curriculum", "n. 课程"), ("tuition", "n. 学费"), ("scholarship", "n. 奖学金"),
+        ("assessment", "n. 评估"), ("literacy", "n. 读写能力"), ("vocational", "adj. 职业的"),
+        ("compulsory", "adj. 义务的，强制的"), ("critical", "adj. 批判性的；关键的"),
+        ("memorise", "v. 记忆"), ("pedagogy", "n. 教学法"),
+    ],
+    "科技": [
+        ("artificial", "adj. 人工的"), ("algorithm", "n. 算法"), ("automation", "n. 自动化"),
+        ("breakthrough", "n. 突破"), ("digital", "adj. 数字的"), ("innovation", "n. 创新"),
+        ("obsolete", "adj. 过时的"), ("privacy", "n. 隐私"), ("surveillance", "n. 监控"),
+        ("virtual", "adj. 虚拟的"),
+    ],
+    "环境": [
+        ("biodiversity", "n. 生物多样性"), ("carbon", "n. 碳"), ("climate", "n. 气候"),
+        ("conservation", "n. 保护"), ("ecosystem", "n. 生态系统"), ("emission", "n. 排放"),
+        ("renewable", "adj. 可再生的"), ("sustainable", "adj. 可持续的"), ("pollution", "n. 污染"),
+        ("deforestation", "n. 滥伐森林"),
+    ],
+    "社会": [
+        ("demographic", "adj. 人口的"), ("equality", "n. 平等"), ("generation", "n. 一代人"),
+        ("inequality", "n. 不平等"), ("urbanisation", "n. 城市化"), ("welfare", "n. 福利"),
+        ("community", "n. 社区"), ("diversity", "n. 多样性"), ("migration", "n. 迁移"),
+        ("poverty", "n. 贫困"),
+    ],
+    "工作": [
+        ("colleague", "n. 同事"), ("deadline", "n. 截止日期"), ("entrepreneur", "n. 企业家"),
+        ("flexible", "adj. 灵活的"), ("promotion", "n. 晋升"), ("recruit", "v. 招聘"),
+        ("salary", "n. 薪水"), ("workload", "n. 工作量"), ("remuneration", "n. 报酬"),
+        ("occupation", "n. 职业"),
+    ],
+    "生活": [
+        ("balanced", "adj. 均衡的"), ("commute", "v./n. 通勤"), ("convenience", "n. 便利"),
+        ("diet", "n. 饮食"), ("leisure", "n. 休闲"), ("nutrition", "n. 营养"),
+        ("routine", "n. 日常惯例"), ("wellbeing", "n. 幸福感"), ("lifestyle", "n. 生活方式"),
+        ("recreation", "n. 娱乐"),
+    ],
+}
+
 
 def _today() -> dt.date:
     return dt.date.today()
@@ -103,3 +143,19 @@ def due_words(today: str | None = None) -> list:
     """到期队列：next <= today 且未毕业（next 非 null）。"""
     t = today or _today().isoformat()
     return [w for w in list_words() if w["next"] is not None and w["next"] <= t]
+
+
+def import_builtin(limit: int | None = None) -> int:
+    """一键导入内置词库（跳过已存在的词），返回新导入数量。"""
+    existing = {w["word"] for w in list_words()}
+    added = 0
+    for topic, words in BUILTIN_WORDS.items():
+        for word, meaning in words:
+            if word in existing:
+                continue
+            add_word(word, meaning)
+            added += 1
+            existing.add(word)
+            if limit and added >= limit:
+                return added
+    return added

@@ -87,3 +87,22 @@ def test_review_not_known_resets_stage(tmp_path, monkeypatch):
     w2 = vocab.list_words()[0]
     assert w2["stage"] == 0
     assert w2["next"] == (dt.date.today() + dt.timedelta(days=1)).isoformat()
+
+
+def test_import_builtin_words(tmp_path, monkeypatch):
+    """一键导入内置词库：全量导入后重复导入不重复添加。"""
+    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
+    n = vocab.import_builtin()  # 全量导入
+    assert n >= 60
+    words = vocab.list_words()
+    assert len(words) == n
+    assert words[0]["word"]  # 词条有内容
+    # 再次全量导入：全部已存在，不重复
+    assert vocab.import_builtin() == 0
+
+
+def test_builtin_library_size():
+    """内置词库至少 60 词，按主题分组。"""
+    assert len(vocab.BUILTIN_WORDS) >= 6  # 至少 6 个主题
+    total = sum(len(words) for words in vocab.BUILTIN_WORDS.values())
+    assert total >= 60
