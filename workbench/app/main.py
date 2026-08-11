@@ -18,6 +18,7 @@ from . import guide as guide_mod
 from . import ideas as ideas_mod
 from . import ielts as ielts_mod
 from . import ielts_ai as ielts_ai_mod
+from . import industries as industries_mod
 from . import links as links_mod
 from . import news as news_mod
 from . import obsidian as obsidian_mod
@@ -572,6 +573,33 @@ def api_exam_check(body: ExamCheckIn):
         raise HTTPException(400, str(e))
     except deepseek.AIError as e:
         raise HTTPException(503, {"reason": e.reason})
+
+
+# ── 行业研究 ───────────────────────────────────────────────
+@app.get("/api/industries")
+def api_industries():
+    return industries_mod.current()
+
+
+@app.get("/api/industries/history")
+def api_industries_history():
+    return {"versions": industries_mod.history()}
+
+
+@app.get("/api/industries/version/{date_str}")
+def api_industries_version(date_str: str):
+    try:
+        return industries_mod.get_version(date_str)
+    except KeyError:
+        raise HTTPException(404, f"没有 {date_str} 的版本")
+
+
+@app.get("/api/industries/{industry_id}")
+def api_industry_detail(industry_id: str):
+    try:
+        return industries_mod.get_industry(industry_id)
+    except KeyError:
+        raise HTTPException(404, f"行业不存在：{industry_id}")
 
 
 # ── 新闻简讯 ───────────────────────────────────────────────

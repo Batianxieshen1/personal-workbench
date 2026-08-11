@@ -15,9 +15,11 @@ const I18N = {
     "nav.home": "首页", "nav.study": "学习", "nav.ielts": "雅思", "nav.ideas": "灵感",
     "nav.review": "复盘", "nav.stats": "统计", "nav.tools": "工具",
     "nav.news": "资讯", "nav.funds": "基金", "nav.exam": "考公",
+    "nav.industries": "行业研究",
     "page.study": "📚 学习", "page.ielts": "🎯 雅思", "page.ideas": "💡 灵感",
     "page.review": "📝 复盘", "page.stats": "📊 统计", "page.tools": "🛠 工具",
     "page.news": "📰 资讯", "page.funds": "💰 基金涨跌", "page.exam": "🎓 考公",
+    "page.industries": "🔬 行业研究",
     "guide.title": "今日行动",
     "card.plan": "今日计划", "card.progress": "学习进度", "card.ielts": "雅思速览",
     "card.ideas": "今日灵感", "card.review": "内容复盘", "card.links": "资源收藏",
@@ -60,9 +62,11 @@ const I18N = {
     "nav.home": "Home", "nav.study": "Study", "nav.ielts": "IELTS", "nav.ideas": "Ideas",
     "nav.review": "Review", "nav.stats": "Stats", "nav.tools": "Tools",
     "nav.news": "News", "nav.funds": "Funds", "nav.exam": "Exam",
+    "nav.industries": "Industries",
     "page.study": "📚 Study", "page.ielts": "🎯 IELTS", "page.ideas": "💡 Ideas",
     "page.review": "📝 Review", "page.stats": "📊 Stats", "page.tools": "🛠 Tools",
     "page.news": "📰 News", "page.funds": "💰 Funds", "page.exam": "🎓 Exam",
+    "page.industries": "🔬 Industries",
     "guide.title": "Today's Plan",
     "card.plan": "Today's Plan", "card.progress": "Study Progress", "card.ielts": "IELTS",
     "card.ideas": "Today's Ideas", "card.review": "Review", "card.links": "Bookmarks",
@@ -136,7 +140,7 @@ async function api(path, options = {}) {
 }
 
 // ── hash 路由 ──
-const PAGES = ["home", "study", "ielts", "ideas", "review", "stats", "news", "funds", "exam", "tools"];
+const PAGES = ["home", "study", "ielts", "ideas", "review", "stats", "news", "funds", "exam", "industries", "tools"];
 
 function navigate() {
   const hash = location.hash.replace(/^#\//, "") || "home";
@@ -154,6 +158,7 @@ function navigate() {
   if (page === "news") loadNews();
   if (page === "funds") { loadFunds(); loadFundManager(); }
   if (page === "exam") loadExamPage();
+  if (page === "industries") loadIndustriesPage();
   if (page === "tools") loadToolsPage();
 }
 
@@ -766,6 +771,98 @@ document.getElementById("speaking-review-btn").addEventListener("click", async (
     out.textContent = "❌ AI 点评失败";
   }
 });
+
+// ── 行业研究页 ──
+let industriesVersion = "current";
+
+async function loadIndustriesPage() {
+  loadIndustriesData();
+  loadIndustriesHistory();
+}
+
+async function loadIndustriesData() {
+  const url = industriesVersion === "current"
+    ? "/api/industries"
+    : `/api/industries/version/${industriesVersion}`;
+  try {
+    const data = await api(url);
+    renderIndustries(data);
+  } catch {
+    document.getElementById("industries-list").innerHTML = '<div class="placeholder">加载失败</div>';
+  }
+}
+
+function renderIndustries(data) {
+  document.getElementById("industries-meta").textContent = `更新于 ${data.updated} · ${data.industries.length} 个赛道`;
+  // 过期提示（超过 3 天建议更新）
+  const staleEl = document.getElementById("industries-stale");
+  const days = Math.floor((Date.now() - new Date(data.updated.replace(/-/g, "/")).getTime()) / 86400000);
+  if (days > 3 && industriesVersion === "current") {
+    staleEl.style.display = "";
+    staleEl.textContent = `⚠️ 已 ${days} 天未更新，找 AI 更新（下次对话时提醒即可）`;
+  } else {
+    staleEl.style.display = "none";
+  }
+  // 交叉赛道
+  document.getElementById("industries-cross").innerHTML = data.cross_sectors
+    .map((c) => `
+      <div class="home-idea">
+        <b>${escapeHtml(c.name)}</b>：${escapeHtml(c.why)}<br>
+        <span class="muted-line">前景：${escapeHtml(c.prospects)}</span>
+      </div>`)
+    .join("");
+  // 行业卡片（按分类分组）
+  document.getElementById("industries-count").textContent = `${data.industries.length} 个赛道`;
+  const groups = {};
+  data.industries.forEach((i) => {
+    (groups[i.category] = groups[i.category] || []).push(i);
+  });
+  document.getElementById("industries-list").innerHTML = Object.entries(groups)
+    .map(([cat, list]) => `
+      <div class="industry-group">
+        <div class="muted-line" style="font-weight:700;margin:6px 0">${escapeHtml(cat)}（${list.length}）</div>
+        ${list.map((i) => `
+          <div class="industry-card" data-industry="${escapeHtml(i.id)}">
+            <div class="industry-head">
+              <b>${escapeHtml(i.name)}</b>
+              <span class="plan-count">${escapeHtml(i.category)}</span>
+            </div>
+            <div class="industry-brief">${escapeHtml(i.prospects)}</div>
+            <div class="industry-detail" style="display:none">
+              <div class="muted-line" style="font-weight:700;margin-top:6px">📈 具体表现</div>
+              ${i.signs.map((s) => `<div class="home-idea">▸ ${escapeHtml(s)}</div>`).join("")}
+              <div class="muted-line" style="font-weight:700;margin-top:6px">🔮 未来预测</div>
+              <div class="home-idea">${escapeHtml(i.forecast)}</div>
+              <div class="muted-line" style="font-weight:700;margin-top:6px">💼 求职机会</div>
+              <div class="home-idea">${escapeHtml(i.jobs)}</div>
+              <div class="muted-line" style="font-weight:700;margin-top:6px">💰 投资要点</div>
+              <div class="home-idea">${escapeHtml(i.investment)}</div>
+            </div>
+          </div>`).join("")}
+      </div>`)
+    .join("");
+}
+
+// 点击行业卡片展开/收起详情
+document.getElementById("industries-list").addEventListener("click", (e) => {
+  const card = e.target.closest("[data-industry]");
+  if (!card) return;
+  const detail = card.querySelector(".industry-detail");
+  detail.style.display = detail.style.display === "none" ? "" : "none";
+});
+
+async function loadIndustriesHistory() {
+  const el = document.getElementById("industries-version");
+  try {
+    const r = await api("/api/industries/history");
+    el.innerHTML = `<option value="current">最新版本</option>` +
+      r.versions.map((v) => `<option value="${v.date}">${v.date}（${v.count} 赛道）</option>`).join("");
+    el.onchange = () => {
+      industriesVersion = el.value;
+      loadIndustriesData();
+    };
+  } catch { /* 无历史 */ }
+}
 
 // ── 考公页 ──
 async function loadExamPage() {

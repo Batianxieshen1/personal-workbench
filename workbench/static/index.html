@@ -48,6 +48,7 @@
       <div class="nav-group-title">📡 资讯</div>
       <a class="nav-item" data-page="news" href="#/news"><span class="nav-ico">📰</span><span data-i18n="nav.news">资讯</span></a>
       <a class="nav-item" data-page="funds" href="#/funds"><span class="nav-ico">💰</span><span data-i18n="nav.funds">基金</span></a>
+      <a class="nav-item" data-page="industries" href="#/industries"><span class="nav-ico">🔬</span><span data-i18n="nav.industries">行业研究</span></a>
     </div>
 
     <div class="nav-group">
@@ -384,6 +385,29 @@
             <button class="btn-small" id="set-fund-add-btn" data-i18n="btn.add.fund">➕ 添加</button>
           </div>
           <div id="set-fund-list" class="set-fund-list" style="margin-top:8px"></div>
+        </div>
+      </div>
+    </section>
+    <section class="page" id="page-industries">
+      <div class="page-head">
+        <h1 data-i18n="page.industries">🔬 行业研究</h1>
+        <p class="page-sub" id="industries-meta"></p>
+      </div>
+      <div class="grid">
+        <div class="card card-wide">
+          <div class="card-title"><span class="card-badge">🕐</span>更新与历史
+            <select class="plan-input" id="industries-version" style="margin-left:auto;width:auto"></select>
+          </div>
+          <div id="industries-stale" class="sub-hint" style="display:none"></div>
+          <div class="sub-hint">30 个最有潜力赛道 · 分析侧重：求职 60% / 投资 20% / 涨知识 20% · 每次更新保留 7 天可回看</div>
+        </div>
+        <div class="card card-wide">
+          <div class="card-title"><span class="card-badge">🔀</span>交叉赛道（真正有前景的组合）</div>
+          <div id="industries-cross" class="card-body"></div>
+        </div>
+        <div class="card card-wide">
+          <div class="card-title"><span class="card-badge">📋</span>赛道列表 <span class="plan-count" id="industries-count"></span></div>
+          <div class="industry-grid" id="industries-list"></div>
         </div>
       </div>
     </section>

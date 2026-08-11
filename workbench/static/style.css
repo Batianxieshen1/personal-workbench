@@ -667,6 +667,19 @@ body {
   box-shadow: 0 4px 12px var(--shadow-lift);
 }
 
+/* 行业研究 */
+.industry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.industry-card {
+  background: var(--bg); border: 1px solid var(--card-border);
+  border-radius: 10px; padding: 10px 12px; cursor: pointer;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+.industry-card:hover { border-color: var(--accent); box-shadow: 0 2px 8px var(--shadow); }
+.industry-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.industry-brief { font-size: 12.5px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+.industry-detail { border-top: 1px dashed var(--card-border); margin-top: 8px; }
+@media (max-width: 720px) { .industry-grid { grid-template-columns: 1fr; } }
+
 /* 统计环（@property 让 --pct 可动画；不支持的浏览器降级为直接显示） */
 @property --pct {
   syntax: "<number>";
