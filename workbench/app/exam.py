@@ -100,7 +100,8 @@ _ANSWER_HINTS = ("答案：", "解析", "正确答案", "标准答案", "应选"
 def ai_generate_question(module: str) -> dict:
     """AI 出一道广东特色题目（选择题）。
 
-    答案保护 = 生成约束（prompt 禁止输出答案）+ 关键词截断（兜底）。
+    答案保护 = 生成约束（prompt 禁止输出答案）+ 结构白名单（只保留题目行与选项行，
+    任何推导/解析/备注行一律丢弃——比关键词黑名单更可靠）。
     判题时 AI 重新解题比对，题目+答案不会同时暴露给用户。
     """
     prompt = (
@@ -110,13 +111,13 @@ def ai_generate_question(module: str) -> dict:
         "确保题目自洽有唯一正确答案，且正确答案在选项中。"
     )
     content = deepseek.chat(prompt, system="你是广东省考出题老师，题目严谨、贴近真题，用中文。")
-    # 兜底过滤：AI 不听话时，从疑似答案/解析行开始截断，保证不泄露
-    clean = []
+    # 结构白名单：只保留题目行和 A/B/C/D 选项行，其余（推导/解析/备注）全部丢弃
+    keep = []
     for ln in content.splitlines():
-        if any(h in ln for h in _ANSWER_HINTS):
-            break
-        clean.append(ln)
-    return {"module": module, "content": "\n".join(clean).strip(), "answer": "", "explain": ""}
+        s = ln.strip()
+        if s.startswith(("题目", "A.", "B.", "C.", "D.", "A．", "B．", "C．", "D．")):
+            keep.append(s)
+    return {"module": module, "content": "\n".join(keep).strip(), "answer": "", "explain": ""}
 
 
 def ai_check_answer(module: str, question: str, user_answer: str, answer: str = "") -> dict:
