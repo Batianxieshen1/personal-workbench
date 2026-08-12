@@ -30,13 +30,16 @@ def test_morning_nav_generates_and_caches(monkeypatch, tmp_path):
         return "今天最重要的是背单词，因为明天到期。加油！"
 
     monkeypatch.setattr(guide.deepseek, "chat", fake_chat)
-    nav = guide.morning_nav("2026-08-04")
+    # 用相对"今天"的日期：固定日期会因跨天落入 7 天缓存清理窗口而挂
+    today = dt.date.today().isoformat()
+    tomorrow = (dt.date.today() + dt.timedelta(days=1)).isoformat()
+    nav = guide.morning_nav(today)
     assert "背单词" in nav["text"]
     # 缓存：当天第二次调用不再调 AI
-    guide.morning_nav("2026-08-04")
+    guide.morning_nav(today)
     assert calls["n"] == 1
     # 第二天重新生成
-    guide.morning_nav("2026-08-05")
+    guide.morning_nav(tomorrow)
     assert calls["n"] == 2
 
 
