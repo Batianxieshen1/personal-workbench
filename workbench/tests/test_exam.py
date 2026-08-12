@@ -36,31 +36,34 @@ def test_exam_date_not_set(tmp_path, monkeypatch):
 def test_ai_generate_question(monkeypatch, tmp_path):
     monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
     monkeypatch.setattr(exam.deepseek, "chat",
-                        lambda prompt, system="", timeout=60.0: "题目：1+1=？\nA. 1\nB. 2\nC. 3\nD. 4\n答案：B\n解析：基础加法")
+                        lambda prompt, system="", timeout=60.0: "题目：1+1=？\nA. 1\nB. 2\nC. 3\nD. 4")
     q = exam.ai_generate_question("数量关系")
     assert q["module"] == "数量关系"
     assert "1+1" in q["content"]
-    # 答案被剥离：content 不含"答案："行，answer 字段单独存
-    assert "答案：" not in q["content"]
-    assert q["answer"] == "B"
-    assert q["explain"] == "基础加法"
-
-
-def test_ai_generate_without_answer_lines(monkeypatch, tmp_path):
-    """AI 未按格式输出时兜底：answer 为空，content 保留原文。"""
-    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
-    monkeypatch.setattr(exam.deepseek, "chat",
-                        lambda prompt, system="", timeout=60.0: "题目：x\nA. 1\nB. 2")
-    q = exam.ai_generate_question("数量关系")
     assert q["answer"] == ""
-    assert "A. 1" in q["content"]
+
+
+def test_ai_generate_truncates_leaked_answer(monkeypatch, tmp_path):
+    """AI 不听话带出解析时：从疑似答案行截断，绝不泄露。"""
+    monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
+    leaked = ("题目：某工程队…\nA. 8人，20天\nB. 10人，18天\nC. 12人，15天\nD. 15人，12天\n"
+              "增加3人：(x+3)(y-5)=xy…\n标准答案为C（12人15天）…\n（注：实际本题数据有瑕疵，标准答案应为C…）")
+    monkeypatch.setattr(exam.deepseek, "chat",
+                        lambda prompt, system="", timeout=60.0: leaked)
+    q = exam.ai_generate_question("数量关系")
+    # 题目+选项保留，答案推导全部被截断
+    assert "D. 15人" in q["content"]
+    assert "标准答案" not in q["content"]
+    assert "瑕疵" not in q["content"]
+    assert "(x+3)" not in q["content"]
 
 
 def test_ai_check_answer(monkeypatch, tmp_path):
     monkeypatch.setattr(storage, "DATA_DIR", str(tmp_path))
     monkeypatch.setattr(exam.deepseek, "chat",
                         lambda prompt, system="", timeout=60.0: "回答正确 ✅ 解析：……")
-    r = exam.ai_check_answer("数量关系", "题目内容", "B", answer="B")
+    # 无标准答案路径：AI 自行解题比对
+    r = exam.ai_check_answer("数量关系", "题目内容", "B")
     assert "解析" in r["result"] or "正确" in r["result"]
 
 

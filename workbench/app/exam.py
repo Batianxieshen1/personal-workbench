@@ -93,36 +93,37 @@ def days_until_exam() -> int | None:
         return None
 
 
+# 疑似答案/解析泄露的关键词：命中即从该行截断（双保险兜底）
+_ANSWER_HINTS = ("答案：", "解析", "正确答案", "标准答案", "应选", "选A", "选B", "选C", "选D", "无解", "瑕疵", "验算")
+
+
 def ai_generate_question(module: str) -> dict:
     """AI 出一道广东特色题目（选择题）。
 
-    答案与解析单独剥离到 answer/explain 字段（前端出题时不显示，
-    判题时才揭示——避免题目+答案一起暴露）。
+    答案保护 = 生成约束（prompt 禁止输出答案）+ 关键词截断（兜底）。
+    判题时 AI 重新解题比对，题目+答案不会同时暴露给用户。
     """
     prompt = (
-        f"你是广东省考出题老师。请出一道【{module}】模块的真题风格选择题（4 个选项），"
+        f"你是广东省考出题老师。请出一道【{module}】模块的真题风格选择题（4 个选项）。\n"
         "输出格式严格为：\n题目：...\nA. ...\nB. ...\nC. ...\nD. ...\n"
-        "答案：X\n解析：...（150 字内）\n"
-        "注意：「答案」和「解析」必须单独成行、放在最后，题目部分不要出现答案线索。"
+        "【硬性要求】只输出题目和选项：绝对不要输出答案、解析、解题过程、验算或任何解释文字；"
+        "确保题目自洽有唯一正确答案，且正确答案在选项中。"
     )
     content = deepseek.chat(prompt, system="你是广东省考出题老师，题目严谨、贴近真题，用中文。")
-    # 剥离答案与解析：题目部分给用户看，答案解析留给判题
-    answer, explain, clean = "", "", []
+    # 兜底过滤：AI 不听话时，从疑似答案/解析行开始截断，保证不泄露
+    clean = []
     for ln in content.splitlines():
-        if ln.startswith("答案"):
-            answer = ln.split("：", 1)[1].strip() if "：" in ln else ln[2:].strip()
-        elif ln.startswith("解析"):
-            explain = ln.split("：", 1)[1].strip() if "：" in ln else ""
-        else:
-            clean.append(ln)
-    return {"module": module, "content": "\n".join(clean).strip(), "answer": answer, "explain": explain}
+        if any(h in ln for h in _ANSWER_HINTS):
+            break
+        clean.append(ln)
+    return {"module": module, "content": "\n".join(clean).strip(), "answer": "", "explain": ""}
 
 
 def ai_check_answer(module: str, question: str, user_answer: str, answer: str = "") -> dict:
-    """AI 判题并解析（带标准答案则直接核对，不带则自行判断）。"""
+    """AI 判题并解析（有标准答案直接核对；没有则 AI 先自行解题再比对）。"""
     if not user_answer.strip():
         raise ValueError("请先作答")
-    answer_line = f"标准答案：{answer}" if answer else "标准答案未知（请自行判断对错）"
+    answer_line = f"标准答案：{answer}" if answer else "没有提供标准答案：请先自行解出正确答案，再与我的答案比对"
     prompt = (
         f"模块：{module}\n题目：\n{question}\n\n{answer_line}\n\n我的答案：{user_answer}\n\n"
         "请判定对错：先说「回答正确 ✅」或「回答错误 ❌ 正确答案是X」，再给出简要解析。"
