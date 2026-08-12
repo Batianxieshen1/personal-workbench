@@ -151,6 +151,7 @@ class ExamCheckIn(BaseModel):
     module: str
     question: str
     user_answer: str
+    answer: str = ""
 
 
 # ── 今日计划 ───────────────────────────────────────────────
@@ -568,7 +569,7 @@ def api_exam_generate(body: ExamModuleIn):
 @app.post("/api/exam/check")
 def api_exam_check(body: ExamCheckIn):
     try:
-        return exam_mod.ai_check_answer(body.module, body.question, body.user_answer)
+        return exam_mod.ai_check_answer(body.module, body.question, body.user_answer, body.answer)
     except ValueError as e:
         raise HTTPException(400, str(e))
     except deepseek.AIError as e:

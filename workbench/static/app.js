@@ -961,6 +961,9 @@ async function loadExamModules() {
   } catch { /* 保持 */ }
 }
 
+// 当前题的隐藏答案（出题时保存，判题时揭示）
+let examCurrentAnswer = "";
+
 document.getElementById("exam-generate-btn").addEventListener("click", async () => {
   const module = document.getElementById("exam-module").value;
   const out = document.getElementById("exam-question");
@@ -969,7 +972,8 @@ document.getElementById("exam-generate-btn").addEventListener("click", async () 
   document.getElementById("exam-result").textContent = "";
   try {
     const r = await api("/api/exam/generate", { method: "POST", body: JSON.stringify({ module }) });
-    out.textContent = r.content;
+    examCurrentAnswer = r.answer || "";
+    out.textContent = r.content;  // 只显示题目+选项，答案隐藏
   } catch {
     out.textContent = "❌ 出题失败（AI 不可用）";
   }
@@ -986,8 +990,12 @@ document.getElementById("exam-check-btn").addEventListener("click", async () => 
   }
   out.textContent = "🤖 判题中…";
   try {
-    const r = await api("/api/exam/check", { method: "POST", body: JSON.stringify({ module, question, user_answer: userAnswer }) });
+    const r = await api("/api/exam/check", {
+      method: "POST",
+      body: JSON.stringify({ module, question, user_answer: userAnswer, answer: examCurrentAnswer }),
+    });
     out.textContent = r.result;
+    examCurrentAnswer = "";  // 判完即弃，防止下次判题带旧答案
   } catch {
     out.textContent = "❌ 判题失败";
   }

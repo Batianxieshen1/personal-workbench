@@ -94,21 +94,37 @@ def days_until_exam() -> int | None:
 
 
 def ai_generate_question(module: str) -> dict:
-    """AI 出一道广东特色题目（选择题，含答案和解析）。"""
+    """AI 出一道广东特色题目（选择题）。
+
+    答案与解析单独剥离到 answer/explain 字段（前端出题时不显示，
+    判题时才揭示——避免题目+答案一起暴露）。
+    """
     prompt = (
         f"你是广东省考出题老师。请出一道【{module}】模块的真题风格选择题（4 个选项），"
-        "输出格式严格为：\n题目：...\nA. ...\nB. ...\nC. ...\nD. ...\n答案：X\n解析：...（150 字内）"
+        "输出格式严格为：\n题目：...\nA. ...\nB. ...\nC. ...\nD. ...\n"
+        "答案：X\n解析：...（150 字内）\n"
+        "注意：「答案」和「解析」必须单独成行、放在最后，题目部分不要出现答案线索。"
     )
     content = deepseek.chat(prompt, system="你是广东省考出题老师，题目严谨、贴近真题，用中文。")
-    return {"module": module, "content": content}
+    # 剥离答案与解析：题目部分给用户看，答案解析留给判题
+    answer, explain, clean = "", "", []
+    for ln in content.splitlines():
+        if ln.startswith("答案"):
+            answer = ln.split("：", 1)[1].strip() if "：" in ln else ln[2:].strip()
+        elif ln.startswith("解析"):
+            explain = ln.split("：", 1)[1].strip() if "：" in ln else ""
+        else:
+            clean.append(ln)
+    return {"module": module, "content": "\n".join(clean).strip(), "answer": answer, "explain": explain}
 
 
-def ai_check_answer(module: str, question: str, user_answer: str) -> dict:
-    """AI 判题并解析。"""
+def ai_check_answer(module: str, question: str, user_answer: str, answer: str = "") -> dict:
+    """AI 判题并解析（带标准答案则直接核对，不带则自行判断）。"""
     if not user_answer.strip():
         raise ValueError("请先作答")
+    answer_line = f"标准答案：{answer}" if answer else "标准答案未知（请自行判断对错）"
     prompt = (
-        f"模块：{module}\n题目与解析：\n{question}\n\n我的答案：{user_answer}\n\n"
+        f"模块：{module}\n题目：\n{question}\n\n{answer_line}\n\n我的答案：{user_answer}\n\n"
         "请判定对错：先说「回答正确 ✅」或「回答错误 ❌ 正确答案是X」，再给出简要解析。"
     )
     result = deepseek.chat(prompt, system="你是广东省考辅导老师，点评简洁准确。")
