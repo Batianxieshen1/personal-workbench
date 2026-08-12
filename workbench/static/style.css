@@ -11,11 +11,16 @@
   --muted: #8a7a58;         /* 次要文字 */
   --accent: #c9a35f;        /* 强调色：暖金 */
   --accent-soft: #e8dcc0;   /* 强调底色（进度条底/标签） */
-  --accent-ink: #8a6d3b;    /* 强调上的文字 */
+  --accent-ink: #7d6231;    /* 强调上的文字（加深：米黄底对比度 4.5:1+） */
   --danger: #b3543f;        /* 删除/危险 */
   --shadow: rgba(120, 90, 40, 0.08);
   --shadow-lift: rgba(120, 90, 40, 0.16);
-  --radius: 14px;
+  --radius-lg: 18px;        /* 大卡 */
+  --radius: 14px;           /* 中卡 */
+  --radius-sm: 10px;        /* 按钮/输入 */
+  --radius-xs: 7px;         /* 小标签 */
+  --font-body: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --font-display: "PingFang SC", "Microsoft YaHei", sans-serif;
   --t-fast: 0.15s ease;
   --t: 0.25s cubic-bezier(0.25, 0.8, 0.35, 1);
   --t-bounce: 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -55,7 +60,7 @@ body {
   background: linear-gradient(165deg, var(--bg) 0%, var(--bg-deep) 100%);
   background-attachment: fixed;
   color: var(--ink);
-  font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+  font-family: var(--font-body);
   font-size: 15px;
   line-height: 1.6;
   transition: background 0.4s ease, color 0.3s ease;
@@ -73,9 +78,19 @@ body {
   border-color: var(--accent);
 }
 
-/* 按钮 hover 微动 */
+/* 按钮 hover 微动 + 按压反馈（taste 纪律：active 必须 scale 回弹） */
 .btn-small:hover { transform: translateY(-1px); box-shadow: 0 3px 8px var(--shadow-lift); }
-.btn-small:active { transform: translateY(0); }
+.btn-small:active, .btn-small.pressed { transform: translateY(0) scale(0.97); }
+button:active, .nav-item:active, .news-tab:active, .quick-link:active {
+  transform: scale(0.97);
+}
+
+/* 键盘可达性：focus ring（taste 纪律：a11y 必需） */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
 
 /* 卡片入场动画：错开上浮 */
 @keyframes cardIn {
@@ -218,7 +233,13 @@ body {
 @keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
 
 .page-head { margin-bottom: 22px; }
-.page-head h1 { font-size: 24px; font-weight: 700; }
+.page-head h1 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;   /* 大标题负字距（taste 纪律） */
+  line-height: 1.25;
+}
 .hero-title { font-size: 30px; font-weight: 800; letter-spacing: -0.01em;
   background: var(--hero-grad);
   -webkit-background-clip: text;
@@ -238,7 +259,7 @@ body {
 .card {
   background: var(--card);
   border: 1px solid var(--card-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   padding: 18px;
   box-shadow: 0 3px 10px var(--shadow);
   position: relative;
@@ -432,9 +453,36 @@ body {
 .vocab-item .plan-del { margin-left: 2px; }
 .vocab-empty { color: var(--muted); font-size: 13px; text-align: center; padding: 14px 0; }
 
+/* 空状态：精致编排（图标 + 引导，taste 纪律） */
+.empty-state {
+  text-align: center;
+  padding: 26px 14px;
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+.empty-state .empty-ico { font-size: 30px; display: block; margin-bottom: 8px; opacity: 0.75; }
+.empty-state .empty-link { color: var(--accent-ink); text-decoration: none; font-weight: 600; }
+.empty-state .empty-link:hover { text-decoration: underline; }
+
+/* 骨架屏：匹配最终布局的占位（taste 纪律：不用通用转圈） */
+.skeleton {
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg,
+    var(--accent-soft) 25%, var(--card) 50%, var(--accent-soft) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.3s ease-in-out infinite;
+  min-height: 14px;
+  margin: 6px 0;
+}
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
 .btn-small {
   border: 1px solid var(--accent); background: var(--accent);
-  color: var(--card); border-radius: 9px; padding: 8px 16px;
+  color: var(--card); border-radius: var(--radius-sm); padding: 8px 16px;
   font-size: 13.5px; font-weight: 600; cursor: pointer;
   position: relative; overflow: hidden;
 }

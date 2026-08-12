@@ -434,6 +434,9 @@ async function loadWeather() {
 // ── 今日计划 ──
 async function loadPlan() {
   const listEl = document.getElementById("plan-list");
+  // 骨架屏（匹配计划列表布局，taste 纪律：不用通用转圈）
+  listEl.innerHTML = Array.from({ length: 4 }, () =>
+    '<li class="plan-item" style="border:none"><span class="skeleton" style="flex:1"></span></li>').join("");
   try {
     const plan = await api("/api/plan");
     renderPlan(plan.items);
@@ -446,7 +449,14 @@ function renderPlan(items) {
   const listEl = document.getElementById("plan-list");
   document.getElementById("plan-count").textContent = items.length ? `(${items.length})` : "";
   if (!items.length) {
-    listEl.innerHTML = `<li class="plan-empty">${t("empty.plan")}</li>`;
+    listEl.innerHTML = `
+      <li class="plan-empty">
+        <div class="empty-state">
+          <span class="empty-ico">📝</span>
+          ${t("empty.plan")}<br>
+          <a class="empty-link" href="#/study" style="display:inline-block;margin-top:4px">去学习页看看 →</a>
+        </div>
+      </li>`;
     return;
   }
   // 重要任务排前面（未完成的在前）
