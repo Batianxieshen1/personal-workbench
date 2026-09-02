@@ -200,7 +200,6 @@ def main():
     filename = f"{extract_date} {sanitize_title(meta.get('标题', '未命名'))}.md"
 
     notes_dir = Path(args.vault) / NOTES_DIR
-    notes_dir.mkdir(parents=True, exist_ok=True)
     target = notes_dir / filename
 
     existing = find_existing(notes_dir, vid)
@@ -222,6 +221,7 @@ def main():
                   f"| {meta.get('点赞',0)} | {meta.get('评论',0)} |")
         return
 
+    notes_dir.mkdir(parents=True, exist_ok=True)
     target.write_text(note, encoding="utf-8")
     print(f"[OK] 笔记已写入: {target}")
     if not args.no_index:
