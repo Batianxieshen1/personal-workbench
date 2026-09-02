@@ -37,6 +37,7 @@
 | 🔧 **零外部依赖安装** | ffmpeg 由 `imageio-ffmpeg` 自动携带，无需手动配置环境 |
 | 📊 **双输出格式** | 人类可读的 Markdown 风格报告 + 机器可解析的 JSON，程序化处理无障碍 |
 | ⚙️ **全路径可配置** | Cookie、输出目录、OCR 组件全部支持环境变量覆盖，可移植到任何机器 |
+| 📓 **Obsidian 自动归档** | 解析报告一键转为标准笔记（YAML frontmatter + 索引 + 视频ID去重），dry-run 预览、确认后写入 |
 
 ## 🎯 效果展示
 
@@ -159,6 +160,29 @@ douyin_output/
 【画面OCR文字】   [时间戳] 逐帧识别的画面文字（开启 --ocr 时）
 【语音字幕全文】  Whisper 完整转写文本
 ```
+
+## 📓 Obsidian 知识库归档
+
+解析报告可以直接转成标准 Obsidian 笔记，沉淀进你的知识库：
+
+```bash
+# 预览模式：生成笔记内容但不写入（确认制）
+python scripts/report_to_note.py <报告路径或视频ID> --dry-run
+
+# 确认无误后正式写入 + 更新索引
+python scripts/report_to_note.py <报告路径或视频ID>
+```
+
+**脚本做了什么**：
+
+- 在知识库中创建 `07-抖音视频/`，每条视频一篇笔记，frontmatter 包含 `tags / source / date / 视频ID / 点赞 / 评论 / 收藏 / 分享` 等字段（可配合 Dataview 做视频数据看板）
+- 自动生成并维护 `抖音视频索引.md` 汇总表格
+- 按 **视频 ID 去重**：重复归档自动跳过，`--force` 覆盖
+- `--summary` / `--transcript` 可注入 AI 整理的「核心要点」和断句版字幕，原始转写折叠保留
+
+知识库路径优先级：`--vault` 参数 > `DOUYIN_VAULT_DIR` 环境变量 > `~/Desktop/agent/我的知识库`。
+
+> 💡 **搭配 AI Agent 使用体验最佳**：让 AI 通读字幕后撰写要点、整理断句字幕，dry-run 预览给你确认，确认后自动入库——你只负责说"可以"。
 
 ## 🤖 作为 AI Skill 使用（推荐）
 

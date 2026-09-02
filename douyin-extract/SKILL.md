@@ -35,6 +35,23 @@ python "<skill路径>/scripts/douyin_extract.py" <视频ID或链接> [--ocr] [--
 1. 脚本最后一行会输出 `--- JSON_OUTPUT ---` + 一行 JSON（含 metadata、ocr_count、transcript_length、report_path），解析它确认成功。
 2. **读取 `report_path` 指向的报告文件**，里面有完整的元数据、OCR 文字和语音字幕全文——这才是给用户的内容来源，JSON 行里只有长度没有正文。
 3. 基于报告内容回答用户的问题（总结/翻译/整理要点等），不要只把文件路径甩给用户。
+4. 然后执行下方「归档到 Obsidian 知识库」流程。
+
+## 归档到 Obsidian 知识库（确认制，每次解析后执行）
+
+解析完成、用户拿到内容后，按以下流程归档（用户明确说"不用归档"才跳过）：
+
+1. 通读字幕，撰写 3-5 条「核心要点」（观点提炼为主；发现引流钩子等需要甄别的内容要加提示），存成临时 md
+2. Whisper 原始转写没有标点断句，整理出分段+标点的可读版本，存成临时 md
+3. 运行 `python "<skill路径>/scripts/report_to_note.py" <报告路径或视频ID> --summary <要点md> --transcript <字幕md> --dry-run`
+4. 把 dry-run 输出的完整笔记内容展示给用户，**等用户确认**
+5. 确认后去掉 `--dry-run` 重新运行正式写入；用户要求修改就改完再走一遍 dry-run
+
+说明：
+
+- 笔记写入 `<vault>/07-抖音视频/`，frontmatter 沿用 tags/source/date 键名，正文含要点/字幕/OCR/视频卡片，自动按视频 ID 去重，并更新索引 `抖音视频索引.md`
+- vault 路径优先级：`--vault` 参数 > `DOUYIN_VAULT_DIR` 环境变量 > `~/Desktop/agent/我的知识库`
+- 确认制是硬约束：未经用户看过预览，绝不写入知识库
 
 ## Cookie 管理（重要）
 
