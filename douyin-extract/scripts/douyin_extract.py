@@ -1,11 +1,16 @@
 """
-抖音视频深度解析 v3.0
-模块化设计：元数据 / OCR(可选) / 语音转文字 / AI摘要
+抖音视频深度解析 v3.1 (skill edition)
+流程：元数据 → 下载视频 → [可选]OCR画面文字 → Whisper语音转文字 → 汇总报告
 
 用法：
-  python douyin_extract_v3.py <video_id> [--ocr]
-  Cookie 自动从 .douyin_cookie 文件读取，无需每次手动输入
-  也可手动指定: python douyin_extract_v3.py <video_id> --cookie "<cookie_str>" [--ocr]
+  python douyin_extract.py <视频ID或链接> [--ocr] [--output-dir 目录]
+  支持裸视频ID、完整链接 (www.douyin.com/video/xxx)、分享短链 (v.douyin.com/xxx)
+
+Cookie 解析优先级：
+  1. --cookie "<cookie_str>" 手动指定
+  2. 环境变量 DOUYIN_COOKIE
+  3. 当前目录 .douyin_cookie
+  4. ~/Desktop/agent/.douyin_cookie （原始工作区回退）
 """
 import requests
 import json
@@ -17,18 +22,28 @@ import imageio_ffmpeg
 import numpy as np
 
 # ── 配置 ───────────────────────────────────────────────────
-OUTPUT_DIR = "douyin_output"
-COOKIE_FILE = ".douyin_cookie"  # Cookie 缓存文件
+OUTPUT_DIR = "douyin_output"  # 默认输出目录，可被 --output-dir 覆盖
+FRAME_INTERVAL = 8  # OCR 每 N 秒抽一帧
 
 HEADERS_BASE = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     "Referer": "https://www.douyin.com/",
 }
 
-# OCR 配置（仅当 --ocr 时使用）
-TESSERACT_CMD = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-TESSDATA_DIR = r"C:\Users\暴龙战士wink\tessdata"
-OCR_LANG = 'chi_sim+eng'
+# OCR 配置（仅当 --ocr 时使用），可用环境变量覆盖
+TESSERACT_CMD = os.environ.get(
+    "DOUYIN_TESSERACT", r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+)
+TESSDATA_DIR = os.environ.get(
+    "DOUYIN_TESSDATA", os.path.join(os.path.expanduser("~"), "tessdata")
+)
+OCR_LANG = os.environ.get("DOUYIN_OCR_LANG", 'chi_sim+eng')
+
+# Cookie 回退位置：原始工作区里的缓存文件，可用 DOUYIN_COOKIE_FILE 覆盖
+FALLBACK_COOKIE_FILE = os.environ.get(
+    "DOUYIN_COOKIE_FILE",
+    os.path.join(os.path.expanduser("~"), "Desktop", "agent", ".douyin_cookie"),
+)
 
 # ── Cookie 管理 ────────────────────────────────────────────
 
@@ -36,26 +51,60 @@ def load_cookie(manual_cookie=None):
     """
     加载 Cookie，优先级：
     1. 手动传入的 cookie 字符串
-    2. .douyin_cookie 文件
-    如果都没有，报错并提示如何获取
+    2. 环境变量 DOUYIN_COOKIE
+    3. 当前目录 .douyin_cookie
+    4. ~/Desktop/agent/.douyin_cookie
+    都没有则报错并提示如何获取
     """
     if manual_cookie:
         return manual_cookie.strip()
 
-    if os.path.exists(COOKIE_FILE):
-        with open(COOKIE_FILE, 'r', encoding='utf-8') as f:
-            cookie = f.read().strip()
-        if cookie:
-            return cookie
+    env_cookie = os.environ.get("DOUYIN_COOKIE")
+    if env_cookie:
+        return env_cookie.strip()
+
+    for path in (os.path.join(os.getcwd(), ".douyin_cookie"), FALLBACK_COOKIE_FILE):
+        if os.path.exists(path):
+            with open(path, 'r', encoding='utf-8') as f:
+                cookie = f.read().strip()
+            if cookie:
+                return cookie
 
     raise RuntimeError(
         "未找到Cookie。请：\n"
         "  1. 浏览器打开 douyin.com 并登录\n"
         "  2. F12 → Network → 搜 'aweme' → 点请求 → 复制Cookie值\n"
-        "  3. 运行: python douyin_extract_v3.py <id> --cookie \"你的Cookie\"\n"
-        "或手动创建 .douyin_cookie 文件放入Cookie"
+        "  3. 保存到当前目录的 .douyin_cookie 文件，"
+        "或运行时加 --cookie \"你的Cookie\""
     )
-FRAME_INTERVAL = 8  # 每 N 秒抽一帧
+
+# ── 视频ID归一化 ───────────────────────────────────────────
+
+def normalize_video_id(raw):
+    """
+    裸ID直接返回；完整链接用正则提取；v.douyin.com 短链
+    跟随重定向后从最终URL或页面内容里提取
+    """
+    raw = raw.strip()
+    if re.fullmatch(r"\d{15,20}", raw):
+        return raw
+
+    m = re.search(r"/(?:video|note)/(\d{15,20})", raw)
+    if m:
+        return m.group(1)
+
+    if raw.startswith("http"):
+        print(f"  [短链解析] {raw}")
+        resp = requests.get(raw, headers=HEADERS_BASE, allow_redirects=True, timeout=15)
+        m = re.search(r"/(?:video|note)/(\d{15,20})", resp.url)
+        if m:
+            return m.group(1)
+        m = re.search(r'"(?:aweme_id|awemeId|itemId)"\s*:\s*"?(\d{15,20})"?', resp.text)
+        if m:
+            return m.group(1)
+        raise RuntimeError(f"无法从链接中解析出视频ID，最终跳转到: {resp.url[:120]}")
+
+    raise RuntimeError(f"无法识别的视频ID: {raw}")
 
 # ── 工具函数 ───────────────────────────────────────────────
 
@@ -204,16 +253,17 @@ def transcribe_audio(audio_path, ffmpeg_bin):
 
 # ── 主流程 ─────────────────────────────────────────────────
 
-def run(video_id, cookie, enable_ocr=False):
+def run(video_id, cookie, enable_ocr=False, output_dir=None):
+    output_dir = output_dir or OUTPUT_DIR
     ffmpeg_bin = get_ffmpeg()
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    os.makedirs(output_dir, exist_ok=True)
 
-    video_path = os.path.join(OUTPUT_DIR, f"{video_id}.mp4")
-    audio_path = os.path.join(OUTPUT_DIR, f"{video_id}.wav")
-    report_path = os.path.join(OUTPUT_DIR, f"{video_id}_full.txt")
+    video_path = os.path.join(output_dir, f"{video_id}.mp4")
+    audio_path = os.path.join(output_dir, f"{video_id}.wav")
+    report_path = os.path.join(output_dir, f"{video_id}_full.txt")
 
     print("=" * 60)
-    print("  抖音视频深度解析 v3.0" + (" (含OCR)" if enable_ocr else ""))
+    print("  抖音视频深度解析 v3.1" + (" (含OCR)" if enable_ocr else ""))
     print("=" * 60)
 
     # Step 1: 元数据
@@ -236,7 +286,7 @@ def run(video_id, cookie, enable_ocr=False):
     ocr_results = []
     if enable_ocr:
         print("\n[3/4] OCR 画面文字识别...")
-        frames_dir = os.path.join(OUTPUT_DIR, f"frames_{video_id}")
+        frames_dir = os.path.join(output_dir, f"frames_{video_id}")
         ocr_results = extract_frames_and_ocr(video_path, frames_dir, metadata['时长(秒)'], ffmpeg_bin)
         print(f"  提取了 {metadata['时长(秒)'] // FRAME_INTERVAL} 帧, 检测到 {len(ocr_results)} 段文字")
         step_num = 4
@@ -281,26 +331,31 @@ def run(video_id, cookie, enable_ocr=False):
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("用法:")
-        print("  python douyin_extract_v3.py <video_id> [--ocr]")
-        print("  python douyin_extract_v3.py <video_id> --cookie \"<cookie_str>\" [--ocr]")
+        print("  python douyin_extract.py <视频ID或链接> [--ocr] [--output-dir 目录]")
+        print("  python douyin_extract.py <视频ID或链接> --cookie \"<cookie_str>\" [--ocr]")
         print("")
-        print("Cookie 自动从 .douyin_cookie 读取，无需每次手动输入")
+        print("支持: 裸视频ID / www.douyin.com/video/xxx / v.douyin.com 短链")
+        print("Cookie 自动按优先级读取，详见文件头注释")
         sys.exit(1)
 
-    video_id = sys.argv[1]
+    video_id = normalize_video_id(sys.argv[1])
 
-    # 解析 --cookie 参数
     manual_cookie = None
+    output_dir = OUTPUT_DIR
     args = sys.argv[2:]
     if "--cookie" in args:
         idx = args.index("--cookie")
         if idx + 1 < len(args):
             manual_cookie = args[idx + 1]
+    if "--output-dir" in args:
+        idx = args.index("--output-dir")
+        if idx + 1 < len(args):
+            output_dir = args[idx + 1]
 
     enable_ocr = "--ocr" in sys.argv
 
     cookie = load_cookie(manual_cookie)
-    result = run(video_id, cookie, enable_ocr)
+    result = run(video_id, cookie, enable_ocr, output_dir)
 
     # 输出结构化JSON 供后续处理
     print("\n--- JSON_OUTPUT ---")
@@ -308,4 +363,5 @@ if __name__ == "__main__":
         "metadata": result["metadata"],
         "ocr_count": len(result["ocr"]),
         "transcript_length": len(result["transcript"]),
+        "report_path": result["report_path"],
     }, ensure_ascii=False))
